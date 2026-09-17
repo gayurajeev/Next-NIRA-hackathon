@@ -672,65 +672,205 @@ export const PublicMap: React.FC<PublicMapProps> = ({ reports, hotspots }) => {
               </div>
             ) : (
               /* =================================================================== */
-              /* CASE B: RECURRENT FLOOD HOTSPOT CLUSTER DETAILS                     */
+              /* CASE B: RECURRENT DRAINAGE HOTSPOT CLUSTER DETAILS                  */
               /* =================================================================== */
               <div className="space-y-4 animate-fadeIn">
+                {/* 1. Hotspot Header & Operational Status */}
                 <div className="p-4 rounded-3xl bg-red-50 border-2 border-red-200 text-red-900 space-y-2">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 font-black text-sm text-[#EF4444]">
-                      <Flame className="w-5 h-5 animate-pulse" />
-                      <span>{selectedPin.risk_level} Hotspot Cluster</span>
+                    <div className="flex items-center gap-1.5 font-black text-sm text-[#EF4444]">
+                      <Flame className="w-5 h-5 animate-pulse text-[#FFC800]" />
+                      <span>DRAINAGE HOTSPOT</span>
                     </div>
-                    <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-black">
-                      Recurrent Failure
+                    <span className="font-mono text-[10px] font-black px-2 py-0.5 rounded-lg bg-red-100 text-red-800 border border-red-200">
+                      {selectedPin.id}
                     </span>
                   </div>
+
                   <h4 className="text-base font-black text-slate-900">{selectedPin.location_name}</h4>
-                  <p className="text-xs text-slate-600 font-medium">
-                    This location experiences chronic drainage overflow and stormwater backing during active monsoon downpours.
-                  </p>
+                  
+                  <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                    <span
+                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                        selectedPin.operational_status === 'RESOLVED_MONITORED'
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                          : selectedPin.operational_status === 'UNDER_INTERVENTION'
+                          ? 'bg-blue-100 text-[#256BF5] border border-blue-200'
+                          : 'bg-red-100 text-[#EF4444] border border-red-200'
+                      }`}
+                    >
+                      {selectedPin.operational_status
+                        ? selectedPin.operational_status.replace(/_/g, ' ')
+                        : `${selectedPin.risk_level} HOTSPOT`}
+                    </span>
+                    <span className="text-[11px] font-bold text-slate-600">
+                      Ward: <strong>{selectedPin.ward}</strong> (Ward #{selectedPin.ward_number})
+                    </span>
+                  </div>
                 </div>
 
-                {/* Required Hotspot Information Format */}
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3 text-xs">
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-500 font-bold">Ward Jurisdiction:</span>
-                    <strong className="text-slate-900 font-black">
-                      Ward: {selectedPin.ward} (Ward #{selectedPin.ward_number})
-                    </strong>
+                {/* 2. Key Operational Metrics Card (Formatted as requested) */}
+                <div className="p-4 rounded-2xl bg-white border-2 border-slate-200 space-y-3 text-xs shadow-xs">
+                  <div className="text-center py-2 px-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+                      Drainage Hotspot Density
+                    </span>
+                    <div className="text-2xl font-black font-mono text-red-600">
+                      {selectedPin.report_count} reports
+                    </div>
+                    <span className="text-xs font-bold text-slate-600">within 200m</span>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-white border border-red-100 text-slate-900 font-bold space-y-1.5">
-                    <div className="flex items-center justify-between text-red-700">
-                      <span>• Incident Density:</span>
-                      <span className="font-black font-mono">
-                        {selectedPin.report_count} reports within 200m
+                  <div className="grid grid-cols-2 gap-2 text-center">
+                    <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 block">
+                        Unresolved
                       </span>
+                      <strong className="text-lg font-black font-mono text-amber-900">
+                        {selectedPin.unresolved_count ?? getHotspotUnresolvedCount(selectedPin)} unresolved
+                      </strong>
                     </div>
-                    <div className="flex items-center justify-between text-amber-800">
-                      <span>• Unresolved Status:</span>
-                      <span className="font-black font-mono">
-                        {getHotspotUnresolvedCount(selectedPin)} unresolved
+
+                    <div className="p-2.5 rounded-xl bg-red-50 border border-red-200">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-red-700 block">
+                        High Priority
                       </span>
+                      <strong className="text-lg font-black font-mono text-red-900">
+                        {selectedPin.high_priority_count ?? 0} high priority
+                      </strong>
                     </div>
-                    <div className="flex items-center justify-between text-slate-700">
-                      <span>• Ward:</span>
-                      <span className="font-black font-mono">{selectedPin.ward}</span>
-                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center text-slate-600 pt-1 border-t border-slate-100">
+                    <span className="font-bold">Ward Jurisdiction:</span>
+                    <strong className="text-slate-900 font-black">Ward: {selectedPin.ward}</strong>
                   </div>
 
                   <div className="flex justify-between items-center text-slate-500">
-                    <span>Cluster Centroid:</span>
+                    <span>Approximate Location:</span>
                     <span className="font-mono text-[11px] text-slate-700">
-                      {selectedPin.center_lat.toFixed(4)}°N, {selectedPin.center_lng.toFixed(4)}°E
+                      ~{selectedPin.center_lat.toFixed(3)}°N, {selectedPin.center_lng.toFixed(3)}°E
                     </span>
                   </div>
                 </div>
 
-                <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium space-y-1">
-                  <strong className="font-black block">Civic Warning for Commuters:</strong>
-                  <p className="text-[11px] leading-relaxed">
-                    Heavy waterlogging anticipated along this corridor during active rain bursts. Scheduled for automated suction jet desilting.
+                {/* 3. Severity Distribution */}
+                {selectedPin.severity_distribution && (
+                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 block">
+                      Severity Distribution (Clustered Incidents)
+                    </span>
+                    <div className="grid grid-cols-4 gap-1.5 text-center text-[10px] font-black font-mono">
+                      <div className="p-1.5 rounded-lg bg-red-100 text-red-800">
+                        <span>CRIT: {selectedPin.severity_distribution.critical}</span>
+                      </div>
+                      <div className="p-1.5 rounded-lg bg-orange-100 text-orange-800">
+                        <span>HIGH: {selectedPin.severity_distribution.high}</span>
+                      </div>
+                      <div className="p-1.5 rounded-lg bg-blue-100 text-blue-800">
+                        <span>MED: {selectedPin.severity_distribution.medium}</span>
+                      </div>
+                      <div className="p-1.5 rounded-lg bg-emerald-100 text-emerald-800">
+                        <span>LOW: {selectedPin.severity_distribution.low}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 4. Operational Explanation & Suggested Action */}
+                <div className="p-4 rounded-2xl bg-blue-50/80 border border-blue-200 space-y-2 text-xs">
+                  <div className="flex items-center gap-1.5 text-[#256BF5] font-black">
+                    <Info className="w-4 h-4 flex-shrink-0" />
+                    <span>Operational Signal (Civic Advisory):</span>
+                  </div>
+                  <p className="text-slate-800 font-bold leading-relaxed text-xs">
+                    &quot;{selectedPin.explanation || 'Repeated reports in a concentrated area may indicate a persistent drainage issue.'}&quot;
+                  </p>
+                  <div className="pt-2 border-t border-blue-200/80">
+                    <span className="text-[10px] font-black uppercase text-blue-700 block">
+                      Suggested Operational Action:
+                    </span>
+                    <p className="text-slate-900 font-black text-xs mt-0.5">
+                      {selectedPin.suggested_action || 'Inspect drainage segment / dispatch response crew'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* 5. Highest Priority Incident in this Cluster */}
+                {selectedPin.highest_priority_incident && (
+                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-1.5">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 block">
+                      Highest Priority Clustered Incident
+                    </span>
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono font-black text-[#256BF5]">
+                        {selectedPin.highest_priority_incident.ticket_code}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-md bg-red-100 text-red-700 font-black text-[10px]">
+                        Score: {selectedPin.highest_priority_incident.priority_score}/100
+                      </span>
+                    </div>
+                    <p className="text-slate-800 font-bold text-xs">
+                      {selectedPin.highest_priority_incident.issue_type.replace(/_/g, ' ')}
+                    </p>
+                    <p className="text-[10px] text-slate-500 truncate">
+                      {selectedPin.highest_priority_incident.landmark}
+                    </p>
+                  </div>
+                )}
+
+                {/* 6. Recent Incidents List in this 200m Hotspot */}
+                {selectedPin.recent_incidents && selectedPin.recent_incidents.length > 0 && (
+                  <div className="p-3.5 rounded-2xl bg-white border border-slate-200 text-xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                        Recent Reports in this Hotspot
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-400">
+                        {selectedPin.recent_incidents.length} listed
+                      </span>
+                    </div>
+                    <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                      {selectedPin.recent_incidents.map(inc => (
+                        <div
+                          key={inc.id}
+                          className="p-2 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between text-[11px]"
+                        >
+                          <div>
+                            <span className="font-mono font-black text-slate-900 block text-[10px]">
+                              {inc.ticket_code}
+                            </span>
+                            <span className="text-slate-600 font-medium">
+                              {inc.issue_type.replace(/_/g, ' ')}
+                            </span>
+                          </div>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[9px] font-black ${
+                              inc.status === 'RESOLVED'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : inc.status === 'IN_PROGRESS'
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-amber-100 text-amber-800'
+                            }`}
+                          >
+                            {inc.status}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 7. Latest Update & Disclaimer */}
+                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 text-[10px] text-slate-500 space-y-1">
+                  <div className="flex justify-between">
+                    <span>Latest Cluster Report:</span>
+                    <strong className="text-slate-700">
+                      {selectedPin.latest_report || selectedPin.last_reported}
+                    </strong>
+                  </div>
+                  <p className="text-[9px] text-slate-400 italic">
+                    Civic Open Data notice: Cluster signals indicate chronic drainage impediments. Not a scientific flood model.
                   </p>
                 </div>
               </div>

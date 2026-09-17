@@ -684,19 +684,27 @@ export const AuthorityCommandCenter: React.FC<AuthorityCommandCenterProps> = ({
       </div>
 
       {/* ========================================================================= */}
-      {/* 4. RECURRENT HOTSPOT CLUSTER DETECTION ALERT BANNER                      */}
+      {/* 4. DRAINAGE HOTSPOT CLUSTERS (OPERATIONAL SIGNALS)                        */}
       {/* ========================================================================= */}
       <div className="bg-[#EDF4FF] rounded-3xl p-6 border-2 border-blue-200 space-y-4 shadow-xs">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Flame className="w-5 h-5 text-[#EF4444] animate-pulse" />
-            <h3 className="text-base font-black text-slate-900">
-              AI Hotspot Cluster Detection: Repeated Drainage Failure Zones
-            </h3>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2">
+              <Flame className="w-5 h-5 text-[#EF4444] animate-pulse" />
+              <h3 className="text-base sm:text-lg font-black text-slate-900">
+                Drainage Hotspots (Operational Triage Signals)
+              </h3>
+            </div>
+            <p className="text-xs text-slate-600 font-medium">
+              Repeated reports in a concentrated area may indicate a persistent drainage issue. Prototype rule: ≥3 reports within 200m.
+            </p>
           </div>
-          <span className="text-xs font-bold text-blue-700 bg-blue-100 px-3 py-1 rounded-full">
-            {hotspots.length} Monitored Hotspot Zones
-          </span>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black text-blue-800 bg-white border border-blue-200 px-3 py-1 rounded-full shadow-xs">
+              {hotspots.length} Monitored Hotspots
+            </span>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -704,20 +712,77 @@ export const AuthorityCommandCenter: React.FC<AuthorityCommandCenterProps> = ({
             <div
               key={hs.id}
               onClick={() => setSelectedWard(hs.ward.split('-')[1]?.trim() || hs.ward)}
-              className="p-4 rounded-2xl bg-white border border-blue-100 space-y-2 text-xs shadow-xs hover:border-[#256BF5] cursor-pointer transition-all"
+              className="p-4 rounded-2xl bg-white border-2 border-blue-100 hover:border-[#256BF5] space-y-3 text-xs shadow-xs cursor-pointer transition-all hover:shadow-md"
             >
-              <div className="flex justify-between items-center">
-                <span className="font-black text-slate-900">{hs.location_name}</span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-red-100 text-[#EF4444]">
-                  {hs.risk_level}
+              <div className="flex justify-between items-start gap-2">
+                <div>
+                  <span className="font-mono text-[9px] font-black text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded block mb-1">
+                    {hs.id}
+                  </span>
+                  <h4 className="font-black text-slate-900 text-sm leading-tight">{hs.location_name}</h4>
+                </div>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase flex-shrink-0 ${
+                    hs.operational_status === 'RESOLVED_MONITORED'
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : hs.operational_status === 'UNDER_INTERVENTION'
+                      ? 'bg-blue-100 text-[#256BF5]'
+                      : 'bg-red-100 text-[#EF4444]'
+                  }`}
+                >
+                  {hs.operational_status ? hs.operational_status.replace(/_/g, ' ') : hs.risk_level}
                 </span>
               </div>
-              <p className="text-slate-500 font-bold">
-                {hs.report_count} Reports clustered within 300m radius
-              </p>
+
+              {/* Cluster Density Metrics */}
+              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1 text-[11px] font-bold">
+                <div className="flex justify-between text-red-700 font-black">
+                  <span>Density:</span>
+                  <span>{hs.report_count} reports within 200m</span>
+                </div>
+                <div className="flex justify-between text-amber-800">
+                  <span>Unresolved:</span>
+                  <span>{hs.unresolved_count ?? hs.report_count} active tickets</span>
+                </div>
+                {hs.high_priority_count !== undefined && (
+                  <div className="flex justify-between text-slate-700 font-medium">
+                    <span>High Priority:</span>
+                    <span>{hs.high_priority_count} tickets</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Severity Distribution Pills */}
+              {hs.severity_distribution && (
+                <div className="flex items-center gap-1 text-[9px] font-black font-mono">
+                  <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-800">
+                    Crit: {hs.severity_distribution.critical}
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
+                    High: {hs.severity_distribution.high}
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">
+                    Med: {hs.severity_distribution.medium}
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                    Low: {hs.severity_distribution.low}
+                  </span>
+                </div>
+              )}
+
+              {/* Operational Action */}
+              <div className="pt-2 border-t border-slate-100 text-[11px]">
+                <span className="text-[10px] font-bold text-slate-400 block uppercase">
+                  Suggested Action:
+                </span>
+                <p className="font-black text-[#256BF5] mt-0.5">
+                  {hs.suggested_action || 'Inspect drainage segment / dispatch response crew'}
+                </p>
+              </div>
+
               <div className="text-[10px] text-slate-400 flex justify-between pt-1 border-t border-slate-100">
-                <span>{hs.ward}</span>
-                <span>Last report: {hs.last_reported}</span>
+                <span className="font-bold text-slate-600">Ward: {hs.ward}</span>
+                <span>{hs.latest_report || hs.last_reported}</span>
               </div>
             </div>
           ))}

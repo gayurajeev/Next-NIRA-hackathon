@@ -26,19 +26,10 @@ function NiraMainApp() {
   useEffect(() => {
     async function loadNiraData() {
       try {
-        const [fetchedReports, fetchedHotspots] = await Promise.all([
-          niraService.getReports(),
-          niraService.getHotspots(),
-        ]);
+        const fetchedReports = await niraService.getReports();
         const dynamicClusters = niraService.detectDynamicHotspots(fetchedReports);
-        const existingIds = new Set(fetchedHotspots.map(h => h.id));
-        const combinedHotspots = [
-          ...fetchedHotspots,
-          ...dynamicClusters.filter((d: HotspotCluster) => !existingIds.has(d.id)),
-        ];
-
         setReports(fetchedReports);
-        setHotspots(combinedHotspots.length > 0 ? combinedHotspots : fetchedHotspots);
+        setHotspots(dynamicClusters);
       } catch (err) {
         console.error('Failed loading NIRA data:', err);
       } finally {
@@ -52,10 +43,7 @@ function NiraMainApp() {
     setReports(prev => {
       const updated = [newReport, ...prev];
       const dynamicClusters = niraService.detectDynamicHotspots(updated);
-      setHotspots(prevHotspots => {
-        const staticHotspots = prevHotspots.filter(h => !h.id.startsWith('dyn-'));
-        return [...staticHotspots, ...dynamicClusters];
-      });
+      setHotspots(dynamicClusters);
       return updated;
     });
   };
@@ -285,7 +273,9 @@ function NiraMainApp() {
                   try {
                     setIsLoading(true);
                     const fetchedReports = await niraService.getReports();
+                    const dynamicClusters = niraService.detectDynamicHotspots(fetchedReports);
                     setReports(fetchedReports);
+                    setHotspots(dynamicClusters);
                   } catch (err) {
                     console.error('Failed refreshing reports:', err);
                   } finally {

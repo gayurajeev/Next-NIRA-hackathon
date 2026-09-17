@@ -585,23 +585,54 @@ export const IncidentSidePanel: React.FC<IncidentSidePanelProps> = ({
                   </div>
                 </div>
 
-                {/* Hotspot indicator */}
+                {/* Drainage Hotspot Operational Signal */}
                 {matchingHotspot ? (
-                  <div className="p-3 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-900 flex items-start gap-2">
-                    <Flame className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <strong className="font-black block">
-                        Located in Recurrent Flood Hotspot
-                      </strong>
-                      <span className="text-[11px] font-medium text-slate-600">
-                        {matchingHotspot.location_name} (Risk:{' '}
-                        {matchingHotspot.risk_level})
+                  <div className="p-3.5 rounded-2xl bg-red-50 border-2 border-red-200 text-xs text-red-900 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 font-black text-[#EF4444]">
+                        <Flame className="w-4 h-4 text-[#FFC800] animate-pulse" />
+                        <span>DRAINAGE HOTSPOT: {matchingHotspot.id}</span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-800 text-[10px] font-black uppercase font-mono">
+                        {matchingHotspot.report_count} in 200m
                       </span>
+                    </div>
+
+                    <div>
+                      <strong className="font-black text-slate-900 block text-xs">
+                        {matchingHotspot.location_name}
+                      </strong>
+                      <div className="flex flex-wrap items-center gap-2 mt-1 text-[11px]">
+                        <span className="text-red-700 font-bold">
+                          • {matchingHotspot.unresolved_count ?? matchingHotspot.report_count} unresolved
+                        </span>
+                        {matchingHotspot.high_priority_count !== undefined && (
+                          <span className="text-amber-800 font-bold">
+                            • {matchingHotspot.high_priority_count} high priority
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-white border border-red-100 space-y-1 text-[11px]">
+                      <span className="font-bold text-slate-600 block">Operational Signal:</span>
+                      <p className="text-slate-800 font-medium italic">
+                        &quot;{matchingHotspot.explanation || 'Repeated reports in a concentrated area may indicate a persistent drainage issue.'}&quot;
+                      </p>
+                      <div className="pt-1 border-t border-slate-100">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">Suggested Action:</span>
+                        <p className="text-[#256BF5] font-black">
+                          {matchingHotspot.suggested_action || 'Inspect drainage segment / dispatch response crew'}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="p-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-[11px] text-slate-500 font-medium">
-                    No chronic flooding hotspot registered at this immediate node.
+                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-0.5">
+                    <span className="font-bold text-slate-700 block">Isolated Incident (Non-Hotspot):</span>
+                    <p className="text-[11px] text-slate-500">
+                      No recurring drainage hotspot cluster registered within 200m. Standard SLA dispatch protocol applies.
+                    </p>
                   </div>
                 )}
               </div>

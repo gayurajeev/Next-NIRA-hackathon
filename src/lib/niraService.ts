@@ -104,60 +104,219 @@ export function calculatePriorityScore(
 }
 
 /**
- * Dynamic Hotspot Detection: Groups multiple nearby active unresolved reports within 400m
- * Automatically recalculates unresolved report counts when tickets are resolved.
+ * Haversine distance in meters
+ */
+export function calculateDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371000; // meters
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+/**
+ * Upgraded NIRA Hotspot Cluster Detection:
+ * Prototype rule: 3 or more reports within 200 meters.
+ * Calculates operational metrics:
+ * - Hotspot ID
+ * - Approximate location
+ * - Ward
+ * - Reports within 200m
+ * - Unresolved reports
+ * - High-priority reports
+ * - Latest report
+ * - Severity distribution
+ * - Current operational status
+ * - Explanation: "Repeated reports in a concentrated area may indicate a persistent drainage issue."
+ * - Suggested action: "Inspect drainage segment / dispatch response crew"
  */
 export function detectDynamicHotspots(reports: DrainageReport[]): HotspotCluster[] {
-  // Only UNRESOLVED reports contribute to active acute hotspot risk
-  const unresolvedReports = reports.filter(r => r.status !== 'RESOLVED');
-
-  const byWard: Record<string, DrainageReport[]> = {};
-  unresolvedReports.forEach(r => {
-    byWard[r.ward] = byWard[r.ward] || [];
-    byWard[r.ward].push(r);
-  });
-
   const clusters: HotspotCluster[] = [];
 
-  // Update baseline clusters based on currently unresolved reports
-  INITIAL_HOTSPOT_CLUSTERS.forEach(baseCluster => {
-    const wardActiveReports = unresolvedReports.filter(
-      r => r.ward.toLowerCase().includes(baseCluster.ward.toLowerCase()) || baseCluster.ward.toLowerCase().includes(r.ward.toLowerCase())
+  // Helper to build enriched HotspotCluster object from a list of reports around a centroid
+  const buildCluster = (
+    id: string,
+    wardName: string,
+    wardNumber: number,
+    locationName: string,
+    centerLat: number,
+    centerLng: number,
+    clusterReports: DrainageReport[],
+    baseRiskLevel?: 'MODERATE' | 'HIGH' | 'CRITICAL'
+  ): HotspotCluster => {
+    const reportCount = clusterReports.length;
+    const unresolvedReports = clusterReports.filter(r => r.status !== 'RESOLVED');
+    const unresolvedCount = unresolvedReports.length;
+
+    // High priority reports (severity CRITICAL/HIGH or priority_score >= 70)
+    const highPriorityReports = clusterReports.filter(
+      r => r.severity === 'CRITICAL' || r.severity === 'HIGH' || (r.priority_score && r.priority_score >= 70)
+    );
+    const highPriorityCount = highPriorityReports.length;
+
+    // Severity distribution
+    const severityDistribution = {
+      critical: clusterReports.filter(r => r.severity === 'CRITICAL').length,
+      high: clusterReports.filter(r => r.severity === 'HIGH').length,
+      medium: clusterReports.filter(r => r.severity === 'MEDIUM').length,
+      low: clusterReports.filter(r => r.severity === 'LOW').length,
+    };
+
+    // Operational status
+    let operationalStatus: 'ACTIVE_UNRESOLVED' | 'UNDER_INTERVENTION' | 'RESOLVED_MONITORED' = 'ACTIVE_UNRESOLVED';
+    if (unresolvedCount === 0) {
+      operationalStatus = 'RESOLVED_MONITORED';
+    } else if (clusterReports.some(r => r.status === 'IN_PROGRESS')) {
+      operationalStatus = 'UNDER_INTERVENTION';
+    } else {
+      operationalStatus = 'ACTIVE_UNRESOLVED';
+    }
+
+    // Risk level based on active unresolved count and severity
+    const riskLevel: 'MODERATE' | 'HIGH' | 'CRITICAL' =
+      unresolvedCount >= 4 || severityDistribution.critical >= 2
+        ? 'CRITICAL'
+        : unresolvedCount >= 2 || severityDistribution.high >= 2
+        ? 'HIGH'
+        : baseRiskLevel || 'MODERATE';
+
+    // Sorted by created_at descending
+    const sortedReports = [...clusterReports].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
 
-    clusters.push({
-      ...baseCluster,
-      report_count: wardActiveReports.length,
-      risk_level:
-        wardActiveReports.length >= 4
-          ? 'CRITICAL'
-          : wardActiveReports.length >= 2
-          ? 'HIGH'
-          : 'MODERATE',
-      last_reported:
-        wardActiveReports.length > 0
-          ? `${wardActiveReports.length} Unresolved Blockages Active`
-          : 'All Recurrent Incidents Cleared',
+    // Latest report time
+    const newest = sortedReports[0];
+    const latestReportTime = newest ? new Date(newest.created_at).toLocaleDateString() : 'N/A';
+
+    // Highest priority incident
+    const highestPriority = [...clusterReports].sort(
+      (a, b) => (b.priority_score || 0) - (a.priority_score || 0)
+    )[0];
+
+    // Citizen-safe recent incidents (no personal PII)
+    const recentIncidents = sortedReports.slice(0, 5).map(r => ({
+      id: r.id,
+      ticket_code: r.ticket_code,
+      issue_type: r.issue_type,
+      status: r.status,
+      severity: r.severity,
+      priority_score: r.priority_score,
+      created_at: r.created_at,
+      landmark: r.landmark,
+    }));
+
+    const highestPriorityIncident = highestPriority
+      ? {
+          id: highestPriority.id,
+          ticket_code: highestPriority.ticket_code,
+          issue_type: highestPriority.issue_type,
+          status: highestPriority.status,
+          severity: highestPriority.severity,
+          priority_score: highestPriority.priority_score,
+          created_at: highestPriority.created_at,
+          landmark: highestPriority.landmark,
+        }
+      : undefined;
+
+    return {
+      id,
+      ward: wardName,
+      ward_number: wardNumber,
+      report_count: reportCount,
+      unresolved_count: unresolvedCount,
+      high_priority_count: highPriorityCount,
+      risk_level: riskLevel,
+      center_lat: centerLat,
+      center_lng: centerLng,
+      location_name: locationName,
+      approximate_location: `${locationName} (~${centerLat.toFixed(3)}°N, ${centerLng.toFixed(3)}°E)`,
+      last_reported: `${unresolvedCount} active unresolved of ${reportCount} clustered`,
+      latest_report: latestReportTime,
+      latest_update: newest ? newest.updated_at || newest.created_at : undefined,
+      severity_distribution: severityDistribution,
+      operational_status: operationalStatus,
+      explanation: 'Repeated reports in a concentrated area may indicate a persistent drainage issue.',
+      suggested_action: 'Inspect drainage segment / dispatch response crew',
+      recent_incidents: recentIncidents,
+      highest_priority_incident: highestPriorityIncident,
+    };
+  };
+
+  // 1. Process known baseline hotspot centers with active reports within 200m
+  INITIAL_HOTSPOT_CLUSTERS.forEach(baseCluster => {
+    // Find all reports within 200m or matching ward
+    const nearbyReports = reports.filter(r => {
+      const dist = calculateDistanceMeters(baseCluster.center_lat, baseCluster.center_lng, r.lat, r.lng);
+      return dist <= 200 || r.ward.toLowerCase().includes(baseCluster.ward.toLowerCase());
     });
+
+    const clusterReports = nearbyReports.length > 0 ? nearbyReports : [];
+    if (clusterReports.length > 0) {
+      clusters.push(
+        buildCluster(
+          baseCluster.id,
+          baseCluster.ward,
+          baseCluster.ward_number,
+          baseCluster.location_name,
+          baseCluster.center_lat,
+          baseCluster.center_lng,
+          clusterReports,
+          baseCluster.risk_level
+        )
+      );
+    } else {
+      clusters.push(baseCluster);
+    }
   });
 
-  // Dynamic clusters for other wards with >= 2 active unresolved reports
-  Object.entries(byWard).forEach(([wardName, wardReports]) => {
-    if (wardReports.length >= 2 && !clusters.some(c => c.ward === wardName)) {
-      const avgLat = wardReports.reduce((sum, r) => sum + r.lat, 0) / wardReports.length;
-      const avgLng = wardReports.reduce((sum, r) => sum + r.lng, 0) / wardReports.length;
+  // 2. Spatial Clustering for any 3 or more reports within 200 meters
+  const visitedReportIds = new Set<string>();
 
-      clusters.push({
-        id: `dyn-hs-${wardReports[0].ward_number}`,
-        ward: wardName,
-        ward_number: wardReports[0].ward_number,
-        report_count: wardReports.length,
-        risk_level: wardReports.length >= 4 ? 'CRITICAL' : wardReports.length >= 3 ? 'HIGH' : 'MODERATE',
-        center_lat: avgLat,
-        center_lng: avgLng,
-        location_name: `${wardName.split('-')[1]?.trim() || wardName} Recurrent Cluster`,
-        last_reported: `${wardReports.length} Active Unresolved`,
-      });
+  reports.forEach(centerReport => {
+    if (visitedReportIds.has(centerReport.id)) return;
+
+    // Find all reports within 200 meters of centerReport
+    const cluster = reports.filter(other => {
+      const dist = calculateDistanceMeters(centerReport.lat, centerReport.lng, other.lat, other.lng);
+      return dist <= 200;
+    });
+
+    // Prototype rule: 3 or more reports within 200 meters
+    if (cluster.length >= 3) {
+      cluster.forEach(r => visitedReportIds.add(r.id));
+
+      const avgLat = cluster.reduce((sum, r) => sum + r.lat, 0) / cluster.length;
+      const avgLng = cluster.reduce((sum, r) => sum + r.lng, 0) / cluster.length;
+
+      // Check if already captured by an existing cluster within 200m
+      const alreadyCaptured = clusters.some(
+        c => calculateDistanceMeters(c.center_lat, c.center_lng, avgLat, avgLng) <= 200
+      );
+
+      if (!alreadyCaptured) {
+        const cleanWard = centerReport.ward.split('-')[1]?.trim() || centerReport.ward;
+        const hotspotId = `HS-DYN-${centerReport.ward_number}-${cleanWard.toUpperCase().replace(/\s+/g, '')}`;
+        const locationName = `${cleanWard} Drainage Corridor`;
+
+        clusters.push(
+          buildCluster(
+            hotspotId,
+            cleanWard,
+            centerReport.ward_number,
+            locationName,
+            avgLat,
+            avgLng,
+            cluster
+          )
+        );
+      }
     }
   });
 

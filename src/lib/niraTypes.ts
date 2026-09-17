@@ -60,16 +60,45 @@ export interface ResolutionAiVerification {
   override_reason?: string;
 }
 
+export interface HotspotSeverityDistribution {
+  critical: number;
+  high: number;
+  medium: number;
+  low: number;
+}
+
+export interface HotspotRecentIncident {
+  id: string;
+  ticket_code: string;
+  issue_type: DrainageIssueType;
+  status: ReportStatus;
+  severity: SeverityLevel;
+  priority_score: number;
+  created_at: string;
+  landmark: string;
+}
+
 export interface HotspotCluster {
   id: string;
   ward: string;
   ward_number: number;
   report_count: number;
+  unresolved_count: number;
+  high_priority_count: number;
   risk_level: 'MODERATE' | 'HIGH' | 'CRITICAL';
   center_lat: number;
   center_lng: number;
   location_name: string;
+  approximate_location: string;
   last_reported: string;
+  latest_report?: string;
+  latest_update?: string;
+  severity_distribution: HotspotSeverityDistribution;
+  operational_status: 'ACTIVE_UNRESOLVED' | 'UNDER_INTERVENTION' | 'RESOLVED_MONITORED';
+  explanation: string;
+  suggested_action: string;
+  recent_incidents?: HotspotRecentIncident[];
+  highest_priority_incident?: HotspotRecentIncident;
 }
 
 export interface WardInfo {

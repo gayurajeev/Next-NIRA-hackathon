@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import L from 'leaflet';
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Circle, useMap, useMapEvents } from 'react-leaflet';
 import { DrainageReport, HotspotCluster } from '@/lib/niraTypes';
 import {
   Layers,
@@ -132,21 +132,26 @@ const createReportIcon = (report: DrainageReport) => {
   });
 };
 
-// 4. Hotspot Cluster Pin
+// 4. Hotspot Cluster Pin (Visually Distinct from Individual Reports)
 const createHotspotIcon = (hotspot: HotspotCluster) =>
   L.divIcon({
     className: 'custom-hotspot-marker',
     html: `
       <div style="position: relative; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-        <div style="position: absolute; inset: -8px; border-radius: 9999px; background: rgba(239, 68, 68, 0.3); animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-        <div style="padding: 4px 8px; border-radius: 12px; background: #EF4444; color: white; font-weight: 900; font-size: 10px; display: flex; align-items: center; gap: 4px; border: 2px solid white; box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4); z-index: 2;">
-          <span>🔥</span>
-          <span>Hotspot (${hotspot.report_count})</span>
+        <div style="position: absolute; inset: -10px; border-radius: 9999px; background: rgba(239, 68, 68, 0.25); animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+        <div style="padding: 5px 10px; border-radius: 14px; background: #DC2626; color: white; font-weight: 900; font-size: 10px; display: flex; align-items: center; gap: 5px; border: 2.5px solid #FEF08A; box-shadow: 0 8px 20px rgba(220, 38, 38, 0.5); z-index: 10; white-space: nowrap;">
+          <span style="font-size: 11px;">🔥</span>
+          <span style="letter-spacing: 0.5px;">HOTSPOT (${hotspot.report_count})</span>
+          ${
+            hotspot.unresolved_count !== undefined
+              ? `<span style="background: rgba(0,0,0,0.3); padding: 1px 4px; border-radius: 6px; font-size: 9px; color: #FEF08A;">${hotspot.unresolved_count} unres</span>`
+              : ''
+          }
         </div>
       </div>
     `,
-    iconSize: [80, 26],
-    iconAnchor: [40, 13],
+    iconSize: [110, 32],
+    iconAnchor: [55, 16],
   });
 
 // ==========================================
@@ -607,33 +612,71 @@ export default function LiveMapInner({
             </Marker>
           ))}
 
-        {/* 4. RECURRENT FLOOD HOTSPOT MARKERS */}
+        {/* 4. RECURRENT DRAINAGE HOTSPOT CLUSTERS & 200m SPATIAL BUFFERS */}
         {showHotspots &&
           hotspots.map(hs => (
-            <Marker
-              key={hs.id}
-              position={[hs.center_lat, hs.center_lng]}
-              icon={createHotspotIcon(hs)}
-              eventHandlers={{
-                click: () => onHotspotClick?.(hs),
-              }}
-            >
-              <Popup className="custom-leaflet-popup">
-                <div className="p-3 text-xs space-y-2 min-w-[220px]">
-                  <div className="flex items-center gap-1.5 font-black text-[#EF4444]">
-                    <Flame className="w-4 h-4 text-[#FFC800]" />
-                    <span>Recurrent Drainage Hotspot</span>
+            <React.Fragment key={hs.id}>
+              {/* 200-meter Spatial Buffer Ring */}
+              <Circle
+                center={[hs.center_lat, hs.center_lng]}
+                radius={200}
+                pathOptions={{
+                  color: hs.operational_status === 'RESOLVED_MONITORED' ? '#10B981' : '#DC2626',
+                  fillColor: hs.operational_status === 'RESOLVED_MONITORED' ? '#10B981' : '#EF4444',
+                  fillOpacity: 0.12,
+                  weight: 2,
+                  dashArray: '5, 5',
+                }}
+              />
+
+              <Marker
+                position={[hs.center_lat, hs.center_lng]}
+                icon={createHotspotIcon(hs)}
+                eventHandlers={{
+                  click: () => onHotspotClick?.(hs),
+                }}
+              >
+                <Popup className="custom-leaflet-popup">
+                  <div className="p-3.5 text-xs space-y-2.5 min-w-[240px]">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                      <div className="flex items-center gap-1 font-black text-[#EF4444]">
+                        <Flame className="w-3.5 h-3.5 text-[#FFC800]" />
+                        <span>DRAINAGE HOTSPOT</span>
+                      </div>
+                      <span className="font-mono text-[9px] font-black px-1.5 py-0.5 rounded bg-slate-100 text-slate-700">
+                        {hs.id}
+                      </span>
+                    </div>
+
+                    <div>
+                      <h4 className="text-slate-900 font-black text-sm">{hs.location_name}</h4>
+                      <p className="text-[11px] text-slate-600 font-bold">
+                        Ward: {hs.ward} (Ward #{hs.ward_number})
+                      </p>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] font-bold text-slate-800 space-y-1">
+                      <div className="text-red-700 font-black">• {hs.report_count} reports within 200m</div>
+                      <div className="text-amber-700">• {hs.unresolved_count ?? hs.report_count} unresolved</div>
+                      {hs.high_priority_count !== undefined && (
+                        <div className="text-orange-800 font-black">• {hs.high_priority_count} high priority</div>
+                      )}
+                    </div>
+
+                    <p className="text-[10px] text-slate-500 font-medium italic leading-snug">
+                      &quot;{hs.explanation || 'Repeated reports in a concentrated area may indicate a persistent drainage issue.'}&quot;
+                    </p>
+
+                    <div className="pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px]">
+                      <span className="text-slate-500 font-bold">
+                        Action: {hs.suggested_action ? 'Crew inspection' : 'Inspect segment'}
+                      </span>
+                      <span className="text-[#256BF5] font-black cursor-pointer">Inspect Details →</span>
+                    </div>
                   </div>
-                  <p className="text-slate-800 font-bold">{hs.location_name}</p>
-                  <p className="text-[11px] text-slate-500 font-black">Ward: {hs.ward}</p>
-                  <div className="p-2.5 rounded-xl bg-red-50 border border-red-100 text-[11px] font-bold text-red-900 space-y-1">
-                    <div>• {hs.report_count} reports within 200m</div>
-                    <div>• {hs.report_count > 0 ? `${hs.report_count} unresolved` : '0 unresolved'}</div>
-                    <div className="text-[10px] text-slate-600 font-medium">Ward: {hs.ward}</div>
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
+                </Popup>
+              </Marker>
+            </React.Fragment>
           ))}
       </MapContainer>
     </div>
