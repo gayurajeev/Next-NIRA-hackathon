@@ -4,6 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { DrainageReport, DrainageIssueType, SeverityLevel } from '@/lib/niraTypes';
 import { calculatePriorityScore, niraService } from '@/lib/niraService';
 import { kmcWardService, WardLookupResult } from '@/lib/kmcWardService';
+import { drainageClassifierService, DrainageClassificationResult } from '@/lib/drainageClassifierService';
+import { AIAnalysisCard } from './AIAnalysisCard';
 import { useAuth } from '@/lib/authContext';
 import { LiveMap } from '@/components/LiveMap';
 import { Camera, MapPin, AlertTriangle, Sparkles, Send, CheckCircle2, UploadCloud, Cpu, Image as ImageIcon, Crosshair, Clock, ShieldCheck, Loader2, Building2 } from 'lucide-react';
@@ -16,21 +18,33 @@ interface CitizenReportProps {
 const SAMPLE_PHOTOS = [
   {
     url: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?auto=format&fit=crop&w=800&q=80',
-    label: 'Blocked Storm Drain (SA Road)',
+    label: 'Blocked Storm Drain',
     type: 'BLOCKED_STORM_DRAIN' as DrainageIssueType,
-    severity: 'CRITICAL' as SeverityLevel,
+    severity: 'HIGH' as SeverityLevel,
   },
   {
     url: 'https://images.unsplash.com/photo-1584467735871-8e85353a8413?auto=format&fit=crop&w=800&q=80',
-    label: 'Silt Clogging (Kadavanthra)',
+    label: 'Silt & Mud Accumulation',
     type: 'SILT_ACCUMULATION' as DrainageIssueType,
     severity: 'HIGH' as SeverityLevel,
   },
   {
     url: 'https://images.unsplash.com/photo-1590059301072-a162235c5c0d?auto=format&fit=crop&w=800&q=80',
-    label: 'Garbage Dumping (Fort Kochi)',
+    label: 'Broken Culvert',
+    type: 'BROKEN_CULVERT' as DrainageIssueType,
+    severity: 'CRITICAL' as SeverityLevel,
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1605600659908-0ef719419d41?auto=format&fit=crop&w=800&q=80',
+    label: 'Illegal Garbage Dumping',
     type: 'GARBAGE_DUMPING' as DrainageIssueType,
     severity: 'MEDIUM' as SeverityLevel,
+  },
+  {
+    url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
+    label: 'Sewage Overflow',
+    type: 'SEWAGE_OVERFLOW' as DrainageIssueType,
+    severity: 'CRITICAL' as SeverityLevel,
   },
 ];
 
@@ -59,6 +73,8 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
   const [wardLookupResult, setWardLookupResult] = useState<WardLookupResult | null>(null);
   const [isIdentifyingWard, setIsIdentifyingWard] = useState<boolean>(false);
   const [wardLookupError, setWardLookupError] = useState<string | null>(null);
+  const [aiClassification, setAiClassification] = useState<DrainageClassificationResult | null>(null);
+  const [aiAnalysisError, setAiAnalysisError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -71,10 +87,28 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
     }
   }, [user, reporterName]);
 
-  // Automatic initial ward determination on component mount
+  // Automatic initial ward determination and photo classification on mount
   useEffect(() => {
     handleLocationUpdate(9.9674, 76.3160, undefined, false);
+    analyzePhoto(SAMPLE_PHOTOS[0].url, SAMPLE_PHOTOS[0].type);
   }, []);
+
+  // AI photo analysis handler using pluggable drainageClassifierService
+  const analyzePhoto = async (url: string, forcedType?: DrainageIssueType) => {
+    setIsAnalyzing(true);
+    setAiAnalysisError(null);
+
+    try {
+      const classification = await drainageClassifierService.classifyImage(url, forcedType);
+      setAiClassification(classification);
+      setIssueType(classification.issueType);
+      setSeverity(classification.severity);
+    } catch {
+      setAiAnalysisError('Unable to analyze image. Please ensure image is clear or adjust parameters manually.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   // Live priority score and mathematical breakdown
   const priorityData = calculatePriorityScore(issueType, severity, true);
@@ -111,14 +145,8 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
   };
 
   const handlePhotoSelect = (sample: typeof SAMPLE_PHOTOS[0]) => {
-    setIsAnalyzing(true);
     setPhotoUrl(sample.url);
-    setIssueType(sample.type);
-    setSeverity(sample.severity);
-
-    setTimeout(() => {
-      setIsAnalyzing(false);
-    }, 600);
+    analyzePhoto(sample.url, sample.type);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -126,19 +154,17 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
     if (!file) return;
 
     setIsUploading(true);
-    setIsAnalyzing(true);
-
     try {
       // Upload to Supabase bucket 'storage'
       const uploadedUrl = await niraService.uploadDrainagePhoto(file);
       setPhotoUrl(uploadedUrl);
+      await analyzePhoto(uploadedUrl);
     } catch (err) {
       console.error('File upload failed:', err);
+      setAiAnalysisError('Failed to upload image to storage. Running local heuristic analysis.');
+      await analyzePhoto(photoUrl);
     } finally {
       setIsUploading(false);
-      setTimeout(() => {
-        setIsAnalyzing(false);
-      }, 500);
     }
   };
 
@@ -242,9 +268,11 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
 
                 <div className="absolute bottom-3 left-3 right-3 bg-white/95 backdrop-blur-md px-3 py-2 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between text-xs z-10">
                   <span className="flex items-center gap-1.5 text-slate-800 font-bold">
-                    <Camera className="w-3.5 h-3.5 text-[#256BF5]" /> Image Verified
+                    <Camera className="w-3.5 h-3.5 text-[#256BF5]" /> Image Acquired
                   </span>
-                  <span className="text-[#10B981] font-black text-[11px]">96.4% AI Match</span>
+                  <span className="text-[#10B981] font-black text-[11px]">
+                    {aiClassification ? `${aiClassification.confidence}% AI Confidence` : 'Awaiting Analysis'}
+                  </span>
                 </div>
               </div>
 
@@ -269,7 +297,7 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
 
                 <div>
                   <p className="text-[11px] text-slate-500 font-bold mb-1.5">Or choose reference scenario photo:</p>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {SAMPLE_PHOTOS.map((sample, idx) => (
                       <button
                         key={idx}
@@ -288,6 +316,18 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                 </div>
               </div>
             </div>
+
+            {/* REUSABLE AI-ASSISTED INCIDENT ANALYSIS CARD */}
+            <AIAnalysisCard
+              result={aiClassification}
+              isAnalyzing={isAnalyzing || isUploading}
+              error={aiAnalysisError}
+              onRetry={() => analyzePhoto(photoUrl, issueType)}
+              onApplyClassification={(type, sev) => {
+                setIssueType(type);
+                setSeverity(sev);
+              }}
+            />
 
             {/* AI PRIORITY IMPACT SCORE GAUGE & TRANSPARENT BREAKDOWN */}
             <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
