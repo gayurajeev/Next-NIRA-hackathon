@@ -30,6 +30,7 @@ export interface LiveMapProps {
   onReportClick?: (report: DrainageReport) => void;
   showReports?: boolean;
   showHotspots?: boolean;
+  onHotspotClick?: (hotspot: HotspotCluster) => void;
 }
 
 // Default center: Keralam Vyttila Mobility Hub corridor
@@ -88,24 +89,32 @@ const createSelectedLocationIcon = () =>
     iconAnchor: [16, 40],
   });
 
-// 3. Civic Drainage Report Marker (Color coded by severity/status)
+// 3. Civic Drainage Report Marker (Strict RED / AMBER / GREEN categories)
+// Blue is reserved exclusively for the user's GPS location marker to prevent confusion.
 const createReportIcon = (report: DrainageReport) => {
-  let bgColor = '#FFC800'; // Default Medium
-  let textColor = '#0F172A';
+  let bgColor = '#F59E0B'; // Default AMBER: Active / in progress
+  let textColor = '#FFFFFF';
   let symbol = '💧';
 
   if (report.status === 'RESOLVED') {
+    // GREEN: Resolved
     bgColor = '#10B981';
     textColor = '#FFFFFF';
     symbol = '✓';
-  } else if (report.status === 'ESCALATED' || report.severity === 'CRITICAL') {
+  } else if (
+    report.status === 'ESCALATED' ||
+    report.severity === 'CRITICAL' ||
+    report.priority_score >= 70
+  ) {
+    // RED: Critical / active unresolved
     bgColor = '#EF4444';
     textColor = '#FFFFFF';
     symbol = '⚠️';
-  } else if (report.severity === 'HIGH') {
-    bgColor = '#256BF5';
+  } else {
+    // AMBER: Active / in progress
+    bgColor = '#F59E0B';
     textColor = '#FFFFFF';
-    symbol = '!';
+    symbol = report.status === 'IN_PROGRESS' ? '⚡' : '💧';
   }
 
   return L.divIcon({
@@ -198,6 +207,7 @@ export default function LiveMapInner({
   height = '480px',
   className = '',
   onReportClick,
+  onHotspotClick,
   showReports = true,
   showHotspots = true,
 }: LiveMapProps) {
@@ -600,7 +610,14 @@ export default function LiveMapInner({
         {/* 4. RECURRENT FLOOD HOTSPOT MARKERS */}
         {showHotspots &&
           hotspots.map(hs => (
-            <Marker key={hs.id} position={[hs.center_lat, hs.center_lng]} icon={createHotspotIcon(hs)}>
+            <Marker
+              key={hs.id}
+              position={[hs.center_lat, hs.center_lng]}
+              icon={createHotspotIcon(hs)}
+              eventHandlers={{
+                click: () => onHotspotClick?.(hs),
+              }}
+            >
               <Popup className="custom-leaflet-popup">
                 <div className="p-3 text-xs space-y-2 min-w-[220px]">
                   <div className="flex items-center gap-1.5 font-black text-[#EF4444]">
@@ -608,9 +625,11 @@ export default function LiveMapInner({
                     <span>Recurrent Drainage Hotspot</span>
                   </div>
                   <p className="text-slate-800 font-bold">{hs.location_name}</p>
-                  <p className="text-[11px] text-slate-500">{hs.ward}</p>
-                  <div className="p-2 rounded-xl bg-red-50 border border-red-100 text-[10px] font-bold text-red-800">
-                    Identified {hs.report_count} clustered citizen reports within 200m radius.
+                  <p className="text-[11px] text-slate-500 font-black">Ward: {hs.ward}</p>
+                  <div className="p-2.5 rounded-xl bg-red-50 border border-red-100 text-[11px] font-bold text-red-900 space-y-1">
+                    <div>• {hs.report_count} reports within 200m</div>
+                    <div>• {hs.report_count > 0 ? `${hs.report_count} unresolved` : '0 unresolved'}</div>
+                    <div className="text-[10px] text-slate-600 font-medium">Ward: {hs.ward}</div>
                   </div>
                 </div>
               </Popup>
