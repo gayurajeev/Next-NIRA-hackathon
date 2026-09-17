@@ -70,11 +70,11 @@ export default function PublicLandingPage() {
 
         <div className="max-w-5xl mx-auto flex flex-col items-center text-center space-y-6">
           {/* Official Logo Display */}
-          <div className="w-20 h-20 sm:w-24 sm:h-24 overflow-hidden flex items-center justify-center">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white flex items-center justify-center shadow-2xl shadow-blue-900/40 p-3">
             <img
               src="/nira-logo.png"
               alt="NIRA - Official Civic Drainage Logo"
-              className="w-full h-full object-contain mix-blend-multiply"
+              className="w-full h-full object-contain"
             />
           </div>
 
