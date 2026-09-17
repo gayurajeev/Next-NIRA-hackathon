@@ -17,7 +17,7 @@ export interface AuthUser {
 interface AuthContextType {
   user: AuthUser | null;
   isLoading: boolean;
-  signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
+  signInWithGoogle: (postLoginUrl?: string) => Promise<{ success: boolean; error?: string }>;
   signInAuthority: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
 }
@@ -81,7 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
     }
 
-    // Supabase auth state listener
+    // Supabase auth state listener — handles OAuth callback redirect
     if (supabase) {
       const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (session?.user) {
@@ -96,6 +96,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           };
           setUser(newUser);
           localStorage.setItem('nira_auth_user', JSON.stringify(newUser));
+
+          // After OAuth callback, redirect to the right dashboard
+          if (event === 'SIGNED_IN' && typeof window !== 'undefined') {
+            const dest = isGov ? '/admin/command-center' : '/user';
+            // Only redirect if we're still on the landing/callback page
+            const cur = window.location.pathname;
+            if (cur === '/' || cur === '/auth/callback') {
+              window.location.href = dest;
+            }
+          }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
           localStorage.removeItem('nira_auth_user');
@@ -108,20 +118,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const signInWithGoogle = async (): Promise<{ success: boolean; error?: string }> => {
+  const signInWithGoogle = async (postLoginUrl = '/user'): Promise<{ success: boolean; error?: string }> => {
     if (!supabase) {
       return { success: false, error: 'Supabase client is not configured.' };
     }
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const redirectTo = typeof window !== 'undefined'
+        ? `${window.location.origin}${postLoginUrl}`
+        : undefined;
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: {
-          redirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
-        },
+        options: { redirectTo },
       });
       if (error) {
         return { success: false, error: error.message };
       }
+      // Browser is now redirecting to Google — code below won't run until return
       return { success: true };
     } catch (err: any) {
       return { success: false, error: err?.message || 'Failed to initiate Google sign-in' };

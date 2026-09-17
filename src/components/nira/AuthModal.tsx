@@ -47,15 +47,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const handleGoogleClick = async () => {
     setIsSubmitting(true);
     setErrorMsg('');
-    const res = await signInWithGoogle();
+    // signInWithOAuth redirects the browser to Google immediately.
+    // Any code after the await won't run until the user returns from Google.
+    const res = await signInWithGoogle(redirectUrl || '/user');
+    // Only reaches here if there was an error (e.g. OAuth not configured)
     setIsSubmitting(false);
-
     if (res && !res.success && res.error) {
       setErrorMsg(res.error);
-    } else {
-      onClose();
-      router.push(redirectUrl || '/user');
     }
+    // On success, Supabase handles the redirect back automatically.
   };
 
   return (
