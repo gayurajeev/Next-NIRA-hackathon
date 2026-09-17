@@ -14,8 +14,8 @@
  * NOTE ON PROTOTYPE CLASSIFIER:
  * This service implements an extensible AI-assisted prototype analysis engine.
  * It is clearly labeled as an "AI-assisted prototype analysis" for the Kochi Civic Tech Hackathon.
- * The architecture is decoupled so production computer vision models (e.g. Google Gemini 1.5 Pro / Flash
- * Vision API, or specialized Edge-YOLO models) can be swapped in directly without changing the UI components.
+ * The architecture is decoupled so production computer vision models (e.g. cloud vision models
+ * or specialized Edge-YOLO models) can be swapped in directly without changing the UI components.
  */
 
 import { DrainageIssueType, SeverityLevel } from './niraTypes';

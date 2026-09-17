@@ -95,10 +95,10 @@ function NiraMainApp() {
 
         <div className="max-w-5xl mx-auto flex flex-col items-center text-center space-y-5">
           
-          {/* Google Initiative / Gemini badge */}
+          {/* Civic Tech Initiative badge */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white text-slate-900 text-xs font-black shadow-md">
             <span className="text-base">✦</span>
-            <span>A Google Gemini & Kochi Civic Initiative</span>
+            <span>A Kochi Municipal & Civic Tech Initiative</span>
           </div>
 
           {/* 3D Giant Yellow Title */}
@@ -321,7 +321,7 @@ function NiraMainApp() {
             <span className="w-6 h-6 rounded-lg bg-[#256BF5] text-white flex items-center justify-center font-black">N</span>
             <span className="text-slate-900 font-black text-sm">NIRA</span> — Neighborhood Intelligence & Response Assistant
           </div>
-          <p>© 2026 NIRA Kochi Hackathon. Inspired by Google Gemini & Fund My Crazy initiative.</p>
+          <p>© 2026 NIRA Kochi Hackathon. Challenge SC-08 — Civic Tech Drainage Intelligence.</p>
         </div>
       </footer>
 
