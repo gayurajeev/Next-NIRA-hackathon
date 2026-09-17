@@ -22,6 +22,7 @@ import {
   Layers,
   Search,
   Eye,
+  LogIn,
 } from 'lucide-react';
 
 export default function PublicLandingPage() {
@@ -99,33 +100,38 @@ export default function PublicLandingPage() {
 
           {/* Hero CTAs */}
           <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
-            <button
-              onClick={scrollToMap}
-              className="px-8 py-3.5 rounded-full bg-white hover:bg-slate-50 text-slate-900 font-black text-sm shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2.5 cursor-pointer"
-            >
-              <Eye className="w-4 h-4 text-[#256BF5]" />
-              <span>View Public Map</span>
-            </button>
-
             {user ? (
               <Link
                 href={user.role === 'GOVERNMENT' ? '/admin/command-center' : '/user'}
-                className="px-8 py-3.5 rounded-full bg-[#FFC800] hover:bg-amber-400 text-slate-950 font-black text-sm shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+                className="px-8 py-3.5 rounded-full bg-white hover:bg-slate-50 text-slate-900 font-black text-sm shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2.5 cursor-pointer"
               >
+                <ArrowRight className="w-4 h-4 text-[#256BF5]" />
                 <span>Go to {user.role === 'GOVERNMENT' ? 'Command Center' : 'Citizen Dashboard'}</span>
-                <ArrowRight className="w-4 h-4" />
               </Link>
             ) : (
-              <button
-                onClick={() => {
-                  setAuthRole('CITIZEN');
-                  setIsAuthModalOpen(true);
-                }}
-                className="px-8 py-3.5 rounded-full bg-blue-700/90 hover:bg-blue-700 text-white font-black text-sm border-2 border-blue-400 shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
-              >
-                <User className="w-4 h-4 text-[#FFC800]" />
-                <span>Sign In</span>
-              </button>
+              <>
+                <button
+                  onClick={() => {
+                    setAuthRole('CITIZEN');
+                    setIsAuthModalOpen(true);
+                  }}
+                  className="px-8 py-3.5 rounded-full bg-white hover:bg-slate-50 text-slate-900 font-black text-sm shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2.5 cursor-pointer"
+                >
+                  <LogIn className="w-4 h-4 text-[#256BF5]" />
+                  <span>Log In</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setAuthRole('CITIZEN');
+                    setIsAuthModalOpen(true);
+                  }}
+                  className="px-8 py-3.5 rounded-full bg-blue-700/90 hover:bg-blue-700 text-white font-black text-sm border-2 border-blue-400 shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  <User className="w-4 h-4 text-[#FFC800]" />
+                  <span>Sign In</span>
+                </button>
+              </>
             )}
           </div>
         </div>
