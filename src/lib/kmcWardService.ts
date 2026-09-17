@@ -1,5 +1,5 @@
 /**
- * NIRA — Kochi Municipal Corporation (KMC) Ward Boundary & Routing Engine
+ * NIRA — Keralam Municipal Corporation (KMC) Ward Boundary & Routing Engine
  * Challenge: SC-08 — Canal and storm-drain blockage reporting
  * 
  * DESIGN RATIONALE:
@@ -11,7 +11,7 @@
  * 
  * NOTE ON GIS DATASET:
  * This file contains a clearly structured prototype boundary dataset covering primary
- * flood-prone drainage corridors of Kochi Municipal Corporation.
+ * flood-prone drainage corridors of Keralam Municipal Corporation.
  * The data structure matches standard GeoJSON Polygon format so that production
  * KSSDI / KMC GIS shapefiles can be dropped in seamlessly.
  */
@@ -57,14 +57,14 @@ export interface WardLookupResult {
 }
 
 /**
- * KOCHI MUNICIPAL CORPORATION - PROTOTYPE DRAINAGE WARD BOUNDARY DATASET
- * Clearly documented prototype boundaries for the Kochi Civic Tech Hackathon SC-08 Challenge.
+ * KERALAM MUNICIPAL CORPORATION - PROTOTYPE DRAINAGE WARD BOUNDARY DATASET
+ * Clearly documented prototype boundaries for the Keralam Civic Tech Hackathon SC-08 Challenge.
  */
 export const KOCHI_PROTOTYPE_WARDS: KmcWardDefinition[] = [
   {
     wardNumber: 40,
     wardName: 'Vyttila',
-    parentCorporation: 'Kochi Municipal Corporation (KMC)',
+    parentCorporation: 'Keralam Municipal Corporation (KMC)',
     zonalAuthority: 'KMC East Zonal Office — Vyttila Division',
     zone: 'East Zone',
     division: 'Division 4 — Drainage & Stormwater Unit',
@@ -89,7 +89,7 @@ export const KOCHI_PROTOTYPE_WARDS: KmcWardDefinition[] = [
   {
     wardNumber: 24,
     wardName: 'Kadavanthra',
-    parentCorporation: 'Kochi Municipal Corporation (KMC)',
+    parentCorporation: 'Keralam Municipal Corporation (KMC)',
     zonalAuthority: 'KMC Central Zonal Office — Kadavanthra Sub-Division',
     zone: 'Central Zone',
     division: 'Division 2 — Central Drainage Works',
@@ -114,7 +114,7 @@ export const KOCHI_PROTOTYPE_WARDS: KmcWardDefinition[] = [
   {
     wardNumber: 28,
     wardName: 'Kaloor',
-    parentCorporation: 'Kochi Municipal Corporation (KMC)',
+    parentCorporation: 'Keralam Municipal Corporation (KMC)',
     zonalAuthority: 'KMC Central Zonal Office — Kaloor Division',
     zone: 'Central Zone',
     division: 'Division 3 — Perandoor Basin Operations',
@@ -139,7 +139,7 @@ export const KOCHI_PROTOTYPE_WARDS: KmcWardDefinition[] = [
   {
     wardNumber: 35,
     wardName: 'Edappally',
-    parentCorporation: 'Kochi Municipal Corporation (KMC)',
+    parentCorporation: 'Keralam Municipal Corporation (KMC)',
     zonalAuthority: 'KMC North Zonal Office — Edappally Division',
     zone: 'North Zone',
     division: 'Division 5 — North Stormwater Taskforce',
@@ -164,7 +164,7 @@ export const KOCHI_PROTOTYPE_WARDS: KmcWardDefinition[] = [
   {
     wardNumber: 12,
     wardName: 'Fort Kochi',
-    parentCorporation: 'Kochi Municipal Corporation (KMC)',
+    parentCorporation: 'Keralam Municipal Corporation (KMC)',
     zonalAuthority: 'KMC West Zonal Office — Fort Kochi Division',
     zone: 'West Zone',
     division: 'Division 1 — Coastal & Heritage Waterways',
@@ -189,7 +189,7 @@ export const KOCHI_PROTOTYPE_WARDS: KmcWardDefinition[] = [
   {
     wardNumber: 18,
     wardName: 'Mattancherry',
-    parentCorporation: 'Kochi Municipal Corporation (KMC)',
+    parentCorporation: 'Keralam Municipal Corporation (KMC)',
     zonalAuthority: 'KMC West Zonal Office — Mattancherry Sub-Division',
     zone: 'West Zone',
     division: 'Division 1 — West Heritage Drainage',
@@ -214,7 +214,7 @@ export const KOCHI_PROTOTYPE_WARDS: KmcWardDefinition[] = [
   {
     wardNumber: 52,
     wardName: 'Ernakulam South / Thevara',
-    parentCorporation: 'Kochi Municipal Corporation (KMC)',
+    parentCorporation: 'Keralam Municipal Corporation (KMC)',
     zonalAuthority: 'KMC Central Zonal Office — South Division',
     zone: 'South Zone',
     division: 'Division 6 — South Outfall Unit',
@@ -239,7 +239,7 @@ export const KOCHI_PROTOTYPE_WARDS: KmcWardDefinition[] = [
   {
     wardNumber: 62,
     wardName: 'Palarivattom',
-    parentCorporation: 'Kochi Municipal Corporation (KMC)',
+    parentCorporation: 'Keralam Municipal Corporation (KMC)',
     zonalAuthority: 'KMC East Zonal Office — Palarivattom Sub-Division',
     zone: 'East Zone',
     division: 'Division 4 — East Arterial Drainage',
@@ -264,8 +264,8 @@ export const KOCHI_PROTOTYPE_WARDS: KmcWardDefinition[] = [
 ];
 
 /**
- * KOCHI MUNICIPAL CORPORATION BROADER JURISDICTIONAL BOUNDS
- * Used for bounds checking to determine whether a coordinate is within Kochi Corporation limits.
+ * KERALAM MUNICIPAL CORPORATION BROADER JURISDICTIONAL BOUNDS
+ * Used for bounds checking to determine whether a coordinate is within Keralam Corporation limits.
  */
 const KOCHI_CORPORATION_BOUNDS = {
   minLat: 9.8800,
@@ -313,14 +313,14 @@ export const kmcWardService = {
    * Synchronous Ward Lookup for immediate calculations
    */
   lookupWardSync(lat: number, lng: number): WardLookupResult {
-    // 1. Check if completely outside Kochi Municipal Corporation bounds
-    const isInsideKochi =
+    // 1. Check if completely outside Keralam Municipal Corporation bounds
+    const isInsideKeralam =
       lat >= KOCHI_CORPORATION_BOUNDS.minLat &&
       lat <= KOCHI_CORPORATION_BOUNDS.maxLat &&
       lng >= KOCHI_CORPORATION_BOUNDS.minLng &&
       lng <= KOCHI_CORPORATION_BOUNDS.maxLng;
 
-    if (!isInsideKochi) {
+    if (!isInsideKeralam) {
       return {
         identified: false,
         wardName: 'Outside KMC Boundary',
@@ -332,10 +332,10 @@ export const kmcWardService = {
         officerRole: 'N/A',
         officerPhone: 'N/A',
         primaryCanalSystem: 'N/A',
-        suggestedLandmark: 'Outside Kochi Corporation Jurisdiction',
+        suggestedLandmark: 'Outside Keralam Corporation Jurisdiction',
         detectionMethod: 'OUT_OF_BOUNDS',
         isPrototypeBoundary: false,
-        message: `Coordinates (${lat.toFixed(4)}, ${lng.toFixed(4)}) fall outside the Kochi Municipal Corporation boundary dataset. Please select a location within Kochi Corporation limits on the map.`,
+        message: `Coordinates (${lat.toFixed(4)}, ${lng.toFixed(4)}) fall outside the Keralam Municipal Corporation boundary dataset. Please select a location within Keralam Corporation limits on the map.`,
       };
     }
 
@@ -356,12 +356,12 @@ export const kmcWardService = {
           suggestedLandmark: ward.suggestedLandmarks[0],
           detectionMethod: 'POLYGON_CONTAINMENT',
           isPrototypeBoundary: true,
-          message: `Location successfully matched within Kochi Municipal Corporation Ward ${ward.wardNumber} (${ward.wardName}) boundary polygon.`,
+          message: `Location successfully matched within Keralam Municipal Corporation Ward ${ward.wardNumber} (${ward.wardName}) boundary polygon.`,
         };
       }
     }
 
-    // 3. Coordinate is within Kochi Corporation, but falls between or adjacent to prototype polygons
+    // 3. Coordinate is within Keralam Corporation, but falls between or adjacent to prototype polygons
     // Use nearest centroid proximity to assign the responsible ward
     let closestWard = KOCHI_PROTOTYPE_WARDS[0];
     let minDistance = Infinity;
@@ -388,7 +388,7 @@ export const kmcWardService = {
       suggestedLandmark: closestWard.suggestedLandmarks[0],
       detectionMethod: 'PROXIMITY_CENTROID',
       isPrototypeBoundary: true,
-      message: `Location falls within Kochi Corporation limits. Mapped to nearest ward corridor: Ward ${closestWard.wardNumber} (${closestWard.wardName}).`,
+      message: `Location falls within Keralam Corporation limits. Mapped to nearest ward corridor: Ward ${closestWard.wardNumber} (${closestWard.wardName}).`,
     };
   },
 

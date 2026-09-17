@@ -29,7 +29,7 @@ const GOV_AUTHORITY: AuthUser = {
   name: 'Executive Engineer (KMC)',
   email: 'admin@nira.in',
   role: 'GOVERNMENT',
-  department: 'Kochi Municipal Drainage & Disaster Cell',
+  department: 'Keralam Municipal Drainage & Disaster Cell',
   avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=120&q=80',
 };
 
@@ -50,7 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             email: session.user.email || '',
             role: isGov ? 'GOVERNMENT' : 'CITIZEN',
             avatar_url: session.user.user_metadata?.avatar_url,
-            department: isGov ? 'Kochi Municipal Drainage & Disaster Cell' : undefined,
+            department: isGov ? 'Keralam Municipal Drainage & Disaster Cell' : undefined,
           };
           setUser(newUser);
           localStorage.setItem('nira_auth_user', JSON.stringify(newUser));
@@ -92,7 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             email: session.user.email || '',
             role: isGov ? 'GOVERNMENT' : 'CITIZEN',
             avatar_url: session.user.user_metadata?.avatar_url,
-            department: isGov ? 'Kochi Municipal Drainage & Disaster Cell' : undefined,
+            department: isGov ? 'Keralam Municipal Drainage & Disaster Cell' : undefined,
           };
           setUser(newUser);
           localStorage.setItem('nira_auth_user', JSON.stringify(newUser));
@@ -152,7 +152,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             name: data.user.email === 'admin@nira.in' ? 'Executive Engineer (KMC)' : 'Authorized Officer',
             email: data.user.email || 'admin@nira.in',
             role: 'GOVERNMENT',
-            department: 'Kochi Municipal Drainage Cell',
+            department: 'Keralam Municipal Drainage Cell',
             avatar_url: GOV_AUTHORITY.avatar_url,
           };
           setUser(authUser);

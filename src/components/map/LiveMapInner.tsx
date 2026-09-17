@@ -32,7 +32,7 @@ export interface LiveMapProps {
   showHotspots?: boolean;
 }
 
-// Default center: Kochi Vyttila Mobility Hub corridor
+// Default center: Keralam Vyttila Mobility Hub corridor
 const DEFAULT_CENTER: [number, number] = [9.9674, 76.2998];
 const DEFAULT_ZOOM = 15;
 

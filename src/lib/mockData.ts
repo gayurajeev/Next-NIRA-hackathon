@@ -60,7 +60,7 @@ export const INITIAL_BUSES: Bus[] = [
   {
     id: 'b5',
     bus_number: 'KL-15-E-3301',
-    name: 'Kochi City Circular Electric',
+    name: 'Keralam City Circular Electric',
     category: 'Ordinary',
     status: 'ACTIVE',
     capacity: 35,
@@ -107,7 +107,7 @@ export const INITIAL_ROUTES: Route[] = [
   {
     id: 'r3',
     route_code: 'R-KCH-TCR',
-    origin: 'Kochi Airport Transit',
+    origin: 'Keralam Airport Transit',
     destination: 'Thrissur Sakthan Stand',
     distance_km: 55.0,
     estimated_mins: 90,

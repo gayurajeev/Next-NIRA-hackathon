@@ -187,7 +187,7 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
         severity: severity,
         ward: ward,
         ward_number: wardNumber,
-        authority: wardLookupResult?.authority || 'Kochi Municipal Corporation (KMC)',
+        authority: wardLookupResult?.authority || 'Keralam Municipal Corporation (KMC)',
         selection_method: locationMethod,
         detection_method: wardLookupResult?.detectionMethod || 'POLYGON_CONTAINMENT',
         landmark: landmark,
@@ -411,7 +411,7 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                   <div>
                     <p className="text-xs font-black text-[#256BF5]">Identifying municipal ward...</p>
                     <p className="text-[10px] text-slate-500 font-medium">
-                      Performing Point-in-Polygon boundary lookup against Kochi Municipal Corporation dataset...
+                      Performing Point-in-Polygon boundary lookup against Keralam Municipal Corporation dataset...
                     </p>
                   </div>
                 </div>
@@ -423,7 +423,7 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                     <span>Unable to identify ward automatically. Please select the location on the map.</span>
                   </div>
                   <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
-                    The chosen coordinate falls outside the configured Kochi Municipal Corporation prototype boundary dataset. Please click or drag within Kochi Corporation limits on the satellite map.
+                    The chosen coordinate falls outside the configured Keralam Municipal Corporation prototype boundary dataset. Please click or drag within Keralam Corporation limits on the satellite map.
                   </p>
                 </div>
               ) : wardLookupResult ? (
@@ -601,7 +601,7 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
             </div>
             <div className="flex justify-between border-b border-blue-200 pb-2">
               <span className="text-slate-600 font-sans font-bold">Authority</span>
-              <span className="text-emerald-800 font-sans font-bold">{submittedReport.authority || 'Kochi Municipal Corporation (KMC)'}</span>
+              <span className="text-emerald-800 font-sans font-bold">{submittedReport.authority || 'Keralam Municipal Corporation (KMC)'}</span>
             </div>
             <div className="flex justify-between border-b border-blue-200 pb-2">
               <span className="text-slate-600 font-sans font-bold">Location Method</span>

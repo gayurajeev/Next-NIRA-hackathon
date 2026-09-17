@@ -98,7 +98,7 @@ function NiraMainApp() {
           {/* Civic Tech Initiative badge */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white text-slate-900 text-xs font-black shadow-md">
             <span className="text-base">✦</span>
-            <span>A Kochi Municipal & Civic Tech Initiative</span>
+            <span>A Keralam Municipal & Civic Tech Initiative</span>
           </div>
 
           {/* 3D Giant Yellow Title */}
@@ -149,7 +149,7 @@ function NiraMainApp() {
       {/* BANNER TAGS (Fund My Crazy Style) */}
       <div className="relative -mt-10 flex flex-col items-center justify-center z-10 px-4">
         <div className="bg-[#FFC800] text-slate-950 px-8 py-3 rounded-2xl shadow-xl font-black text-lg sm:text-2xl tracking-tight border-2 border-slate-900/10">
-          Clean Kochi • Zero Waterlogging
+          Clean Keralam • Zero Waterlogging
         </div>
         <div className="mt-2 bg-slate-900 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow">
           Monsoon Readiness 2026 • 24/7 Ward Response
@@ -166,7 +166,7 @@ function NiraMainApp() {
               What is <br /> NIRA?
             </h3>
             <p className="text-slate-900 text-base font-medium mt-3 leading-relaxed">
-              <strong>Neighborhood Intelligence & Response Assistant</strong> — launched as a citizen-first initiative to eliminate urban drainage blockages, tackle silt accumulation, and prevent flooding across Kochi wards.
+              <strong>Neighborhood Intelligence & Response Assistant</strong> — launched as a citizen-first initiative to eliminate urban drainage blockages, tackle silt accumulation, and prevent flooding across Keralam wards.
             </p>
           </div>
 
@@ -214,7 +214,7 @@ function NiraMainApp() {
               How NIRA Works
             </h2>
             <p className="text-slate-500 text-sm font-medium">
-              Just 3 simple steps can solve drainage issues across Kochi
+              Just 3 simple steps can solve drainage issues across Keralam
             </p>
 
             {/* 3 Step Action Pills (Fund My Crazy Style) */}
@@ -321,7 +321,7 @@ function NiraMainApp() {
             <span className="w-6 h-6 rounded-lg bg-[#256BF5] text-white flex items-center justify-center font-black">N</span>
             <span className="text-slate-900 font-black text-sm">NIRA</span> — Neighborhood Intelligence & Response Assistant
           </div>
-          <p>© 2026 NIRA Kochi Hackathon. Challenge SC-08 — Civic Tech Drainage Intelligence.</p>
+          <p>© 2026 NIRA Keralam Hackathon. Challenge SC-08 — Civic Tech Drainage Intelligence.</p>
         </div>
       </footer>
 

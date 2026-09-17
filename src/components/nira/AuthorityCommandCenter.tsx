@@ -207,7 +207,7 @@ export const AuthorityCommandCenter: React.FC<AuthorityCommandCenterProps> = ({
           <div className="flex items-center gap-2">
             <ShieldAlert className="w-6 h-6 text-[#256BF5]" />
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
-              Kochi Municipal Command Center
+              Keralam Municipal Command Center
             </h2>
           </div>
           <p className="text-xs sm:text-sm text-slate-600 font-medium mt-1">
@@ -240,7 +240,7 @@ export const AuthorityCommandCenter: React.FC<AuthorityCommandCenterProps> = ({
             onChange={e => setSelectedWard(e.target.value)}
             className="px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-xs font-black text-slate-900 focus:outline-none focus:border-[#256BF5]"
           >
-            <option value="ALL">All Kochi Wards</option>
+            <option value="ALL">All Keralam Wards</option>
             <option value="Vyttila">Ward 24 (Vyttila)</option>
             <option value="Kadavanthra">Ward 35 (Kadavanthra)</option>
             <option value="Fort Kochi">Ward 12 (Fort Kochi)</option>
@@ -356,7 +356,7 @@ export const AuthorityCommandCenter: React.FC<AuthorityCommandCenterProps> = ({
                     </td>
                     <td className="px-4 py-3">
                       <div className="font-black text-slate-900">{rep.ward} (Ward #{rep.ward_number})</div>
-                      <div className="text-[10px] font-black text-emerald-800">{rep.authority || 'Kochi Municipal Corporation (KMC)'}</div>
+                      <div className="text-[10px] font-black text-emerald-800">{rep.authority || 'Keralam Municipal Corporation (KMC)'}</div>
                       <div className="text-[11px] text-slate-500 truncate max-w-[180px]">{rep.landmark}</div>
                     </td>
                     <td className="px-4 py-3">

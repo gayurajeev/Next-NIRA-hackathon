@@ -192,7 +192,7 @@ export const IncidentModal: React.FC<IncidentModalProps> = ({
             {/* GPS Location Ping info */}
             <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-[11px] text-slate-500">
               <span className="flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-red-400" /> Geolocation Ping: Active (Vyttila Hub, Kochi)
+                <MapPin className="w-3.5 h-3.5 text-red-400" /> Geolocation Ping: Active (Vyttila Hub, Keralam)
               </span>
               <span className="font-mono text-emerald-400">± 4m Accuracy</span>
             </div>

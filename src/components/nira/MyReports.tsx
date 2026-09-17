@@ -93,7 +93,7 @@ export const MyReports: React.FC<MyReportsProps> = ({ reports }) => {
                       </span>
                       <span>•</span>
                       <span className="text-emerald-800 font-black">
-                        {report.authority || 'Kochi Municipal Corporation (KMC)'}
+                        {report.authority || 'Keralam Municipal Corporation (KMC)'}
                       </span>
                       <span>•</span>
                       <span className="text-slate-500 font-medium">{report.landmark}</span>

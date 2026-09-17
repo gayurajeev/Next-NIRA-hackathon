@@ -40,7 +40,7 @@ export interface WardIdentificationOutput {
 }
 
 /**
- * Automatically maps GPS or manual coordinates to responsible Kochi Municipal Corporation wards
+ * Automatically maps GPS or manual coordinates to responsible Keralam Municipal Corporation wards
  * Uses the reusable Point-in-Polygon (PIP) kmcWardService engine.
  */
 export function identifyKochiWard(lat: number, lng: number): WardIdentificationOutput {

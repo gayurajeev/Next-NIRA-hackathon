@@ -53,7 +53,7 @@ export interface PriorityScoreResult {
 }
 
 /**
- * Known major transit corridors and critical infrastructure in Kochi
+ * Known major transit corridors and critical infrastructure in Keralam
  */
 const KOCHI_MAJOR_CORRIDORS = [
   'vyttila',
@@ -89,7 +89,7 @@ export function isNearMajorCorridor(
     if (textToCheck.includes(corridor)) return true;
   }
 
-  // Key Kochi coordinates for major junctions
+  // Key Keralam coordinates for major junctions
   if (lat && lng) {
     // Vyttila Hub area (9.967, 76.316)
     if (Math.abs(lat - 9.9674) < 0.015 && Math.abs(lng - 76.3160) < 0.015) return true;
@@ -99,7 +99,7 @@ export function isNearMajorCorridor(
     if (Math.abs(lat - 10.0240) < 0.015 && Math.abs(lng - 76.3120) < 0.015) return true;
   }
 
-  return true; // Default to true in metropolitan Kochi core
+  return true; // Default to true in metropolitan Keralam core
 }
 
 /**
