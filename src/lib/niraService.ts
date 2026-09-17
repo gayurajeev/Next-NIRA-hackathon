@@ -238,8 +238,13 @@ export const niraService = {
     options?: {
       escalatedReason?: string;
       assignedCrew?: string;
+      assignedOfficer?: string;
       resolutionPhotoUrl?: string;
       resolutionNotes?: string;
+      priorityScore?: number;
+      severity?: SeverityLevel;
+      internalNotes?: string[];
+      internalNote?: string;
     }
   ): Promise<Partial<DrainageReport>> {
     const now = new Date().toISOString();
@@ -247,9 +252,13 @@ export const niraService = {
       status: newStatus,
       updated_at: now,
       ...(options?.escalatedReason ? { escalated_reason: options.escalatedReason } : {}),
-      ...(options?.assignedCrew ? { assigned_crew: options.assignedCrew, assigned_officer: options.assignedCrew } : {}),
+      ...(options?.assignedCrew ? { assigned_crew: options.assignedCrew, assigned_officer: options.assignedOfficer || options.assignedCrew } : {}),
+      ...(options?.assignedOfficer ? { assigned_officer: options.assignedOfficer } : {}),
       ...(options?.resolutionPhotoUrl ? { resolution_photo_url: options.resolutionPhotoUrl } : {}),
       ...(options?.resolutionNotes ? { resolution_notes: options.resolutionNotes } : {}),
+      ...(options?.priorityScore !== undefined ? { priority_score: options.priorityScore } : {}),
+      ...(options?.severity ? { severity: options.severity } : {}),
+      ...(options?.internalNotes ? { internal_notes: options.internalNotes } : {}),
       ...(newStatus === 'RESOLVED' ? { resolved_at: now } : {}),
     };
 

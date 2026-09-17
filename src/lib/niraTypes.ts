@@ -43,6 +43,8 @@ export interface DrainageReport {
   resolution_photo_url?: string;
   resolved_at?: string;
   resolution_notes?: string;
+  internal_notes?: string[];
+  ai_confidence?: number;
 }
 
 export interface HotspotCluster {

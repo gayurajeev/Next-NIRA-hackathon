@@ -1,0 +1,903 @@
+'use client';
+
+import React, { useState, useRef } from 'react';
+import { DrainageReport, HotspotCluster, SeverityLevel, ReportStatus } from '@/lib/niraTypes';
+import { niraService, calculatePriorityScore } from '@/lib/niraService';
+import { NIRAPriorityBadge } from './NIRAPriorityBadge';
+import { NIRAPriorityCard } from './NIRAPriorityCard';
+import {
+  X,
+  MapPin,
+  Clock,
+  Building2,
+  Users,
+  ShieldAlert,
+  AlertTriangle,
+  CheckCircle2,
+  UploadCloud,
+  FileText,
+  Flame,
+  Send,
+  Eye,
+  Sliders,
+  Sparkles,
+  ArrowRight,
+  AlertOctagon,
+  ChevronRight,
+  Check,
+} from 'lucide-react';
+
+export interface IncidentSidePanelProps {
+  report: DrainageReport | null;
+  hotspots: HotspotCluster[];
+  allReports: DrainageReport[];
+  availableCrews: string[];
+  onClose: () => void;
+  onReportUpdated: (updatedReport: DrainageReport) => void;
+}
+
+export const IncidentSidePanel: React.FC<IncidentSidePanelProps> = ({
+  report,
+  hotspots,
+  allReports,
+  availableCrews,
+  onClose,
+  onReportUpdated,
+}) => {
+  const [activeTab, setActiveTab] = useState<'overview' | 'actions' | 'notes'>('overview');
+  const [isUpdating, setIsUpdating] = useState<boolean>(false);
+
+  // Form states for quick actions
+  const [selectedCrew, setSelectedCrew] = useState<string>(
+    report?.assigned_crew || availableCrews[0]
+  );
+  const [overrideSeverity, setOverrideSeverity] = useState<SeverityLevel>(
+    report?.severity || 'HIGH'
+  );
+  const [newInternalNote, setNewInternalNote] = useState<string>('');
+  const [escalationReason, setEscalationReason] = useState<string>(
+    report?.escalated_reason ||
+      'SLA Breached: Stalled over allowable time during active monsoon downpour. Requires Assistant Executive Engineer intervention.'
+  );
+
+  // Resolution evidence
+  const [resolutionPhotoUrl, setResolutionPhotoUrl] = useState<string>(
+    report?.resolution_photo_url ||
+      'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?auto=format&fit=crop&w=800&q=80'
+  );
+  const [resolutionNotes, setResolutionNotes] = useState<string>(
+    report?.resolution_notes ||
+      'Drain cleared using high-pressure jetting and suction pump. Water flow fully restored.'
+  );
+  const [isUploadingResolution, setIsUploadingResolution] = useState<boolean>(false);
+  const resolutionFileInputRef = useRef<HTMLInputElement>(null);
+
+  if (!report) return null;
+
+  // SLA Calculation
+  const elapsedHours = Math.max(
+    0,
+    (Date.now() - new Date(report.created_at).getTime()) / (1000 * 60 * 60)
+  );
+  const slaLimit =
+    report.sla_hours ||
+    (report.severity === 'CRITICAL' ? 3 : report.severity === 'HIGH' ? 6 : 12);
+  const remainingHours = slaLimit - elapsedHours;
+  const isBreached = remainingHours < 0 && report.status !== 'RESOLVED';
+
+  // Check if inside a known hotspot
+  const matchingHotspot = hotspots.find(
+    hs =>
+      hs.ward.toLowerCase() === report.ward.toLowerCase() ||
+      Math.sqrt(
+        Math.pow(hs.center_lat - report.lat, 2) + Math.pow(hs.center_lng - report.lng, 2)
+      ) < 0.015
+  );
+
+  // Nearby unresolved report count in this ward
+  const nearbyReportsCount = allReports.filter(
+    r => r.ward.toLowerCase() === report.ward.toLowerCase() && r.id !== report.id
+  ).length;
+
+  // Re-evaluate full priority breakdown using deterministic engine
+  const priorityData = calculatePriorityScore(report.issue_type, report.severity, true, {
+    ward: report.ward,
+    lat: report.lat,
+    lng: report.lng,
+    nearbyUnresolvedCount: nearbyReportsCount,
+  });
+
+  // Action Handlers
+  const handleAssignCrew = async () => {
+    setIsUpdating(true);
+    try {
+      await niraService.updateReportStatus(report.id, 'ASSIGNED', {
+        assignedCrew: selectedCrew,
+        assignedOfficer: selectedCrew,
+      });
+      const updated: DrainageReport = {
+        ...report,
+        status: 'ASSIGNED',
+        assigned_crew: selectedCrew,
+        assigned_officer: selectedCrew,
+        updated_at: new Date().toISOString(),
+      };
+      onReportUpdated(updated);
+    } catch (e) {
+      console.error('Failed to assign crew:', e);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleStartWork = async () => {
+    setIsUpdating(true);
+    try {
+      await niraService.updateReportStatus(report.id, 'IN_PROGRESS', {
+        assignedCrew: report.assigned_crew || selectedCrew,
+      });
+      const updated: DrainageReport = {
+        ...report,
+        status: 'IN_PROGRESS',
+        assigned_crew: report.assigned_crew || selectedCrew,
+        updated_at: new Date().toISOString(),
+      };
+      onReportUpdated(updated);
+    } catch (e) {
+      console.error('Failed to start work:', e);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleChangePriority = async () => {
+    setIsUpdating(true);
+    try {
+      const recalculated = calculatePriorityScore(report.issue_type, overrideSeverity, true, {
+        ward: report.ward,
+        lat: report.lat,
+        lng: report.lng,
+      });
+
+      await niraService.updateReportStatus(report.id, report.status, {
+        severity: overrideSeverity,
+        priorityScore: recalculated.score,
+      });
+
+      const updated: DrainageReport = {
+        ...report,
+        severity: overrideSeverity,
+        priority_score: recalculated.score,
+        priority_explanation: recalculated.explanation,
+        sla_hours: recalculated.slaHours,
+        updated_at: new Date().toISOString(),
+      };
+      onReportUpdated(updated);
+    } catch (e) {
+      console.error('Failed to change priority:', e);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleAddInternalNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newInternalNote.trim()) return;
+
+    setIsUpdating(true);
+    try {
+      const timestampedNote = `[${new Date().toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+      })}] ${newInternalNote.trim()}`;
+      const existingNotes = report.internal_notes || [];
+      const updatedNotes = [...existingNotes, timestampedNote];
+
+      await niraService.updateReportStatus(report.id, report.status, {
+        internalNotes: updatedNotes,
+      });
+
+      const updated: DrainageReport = {
+        ...report,
+        internal_notes: updatedNotes,
+        updated_at: new Date().toISOString(),
+      };
+      onReportUpdated(updated);
+      setNewInternalNote('');
+    } catch (e) {
+      console.error('Failed to add internal note:', e);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleResolutionFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingResolution(true);
+    try {
+      const uploadedUrl = await niraService.uploadDrainagePhoto(file);
+      setResolutionPhotoUrl(uploadedUrl);
+    } catch (err) {
+      console.error('Failed uploading resolution evidence:', err);
+    } finally {
+      setIsUploadingResolution(false);
+    }
+  };
+
+  const handleConfirmResolve = async () => {
+    setIsUpdating(true);
+    const now = new Date().toISOString();
+    try {
+      await niraService.updateReportStatus(report.id, 'RESOLVED', {
+        resolutionPhotoUrl,
+        resolutionNotes,
+      });
+
+      const updated: DrainageReport = {
+        ...report,
+        status: 'RESOLVED',
+        resolution_photo_url: resolutionPhotoUrl,
+        resolution_notes: resolutionNotes,
+        resolved_at: now,
+        updated_at: now,
+      };
+
+      onReportUpdated(updated);
+    } catch (e) {
+      console.error('Failed to resolve report:', e);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleConfirmEscalate = async () => {
+    setIsUpdating(true);
+    try {
+      await niraService.updateReportStatus(report.id, 'ESCALATED', {
+        escalatedReason: escalationReason,
+      });
+
+      const updated: DrainageReport = {
+        ...report,
+        status: 'ESCALATED',
+        escalated_reason: escalationReason,
+        updated_at: new Date().toISOString(),
+      };
+
+      onReportUpdated(updated);
+    } catch (e) {
+      console.error('Failed to escalate report:', e);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Status timeline steps calculation: supports both standard and escalation workflows
+  const hasEvidence = Boolean(report.resolution_photo_url);
+  const isEscalatedPath = report.status === 'ESCALATED' || (isBreached && report.status !== 'RESOLVED');
+
+  const standardWorkflowSteps = [
+    { key: 'REPORTED', label: 'Reported', completed: true, current: report.status === 'OPEN' },
+    {
+      key: 'ASSIGNED',
+      label: 'Assigned',
+      completed:
+        report.status === 'ASSIGNED' ||
+        report.status === 'IN_PROGRESS' ||
+        report.status === 'RESOLVED',
+      current: report.status === 'ASSIGNED',
+    },
+    {
+      key: 'IN_PROGRESS',
+      label: 'In Progress',
+      completed: report.status === 'IN_PROGRESS' || report.status === 'RESOLVED',
+      current: report.status === 'IN_PROGRESS' && !hasEvidence,
+    },
+    {
+      key: 'RESOLUTION_EVIDENCE',
+      label: 'Resolution Evidence',
+      completed: hasEvidence || report.status === 'RESOLVED',
+      current: hasEvidence && report.status !== 'RESOLVED',
+    },
+    {
+      key: 'RESOLVED',
+      label: 'Resolved',
+      completed: report.status === 'RESOLVED',
+      current: report.status === 'RESOLVED',
+    },
+  ];
+
+  const escalationWorkflowSteps = [
+    { key: 'REPORTED', label: 'Reported', completed: true, current: false },
+    {
+      key: 'ASSIGNED',
+      label: 'Assigned',
+      completed: report.status === 'ASSIGNED' || report.status === 'IN_PROGRESS' || report.status === 'ESCALATED' || Boolean(report.assigned_crew),
+      current: false,
+    },
+    {
+      key: 'SLA_BREACHED',
+      label: 'SLA Breached',
+      completed: isBreached || report.status === 'ESCALATED',
+      current: isBreached && report.status !== 'ESCALATED',
+      isWarning: true,
+    },
+    {
+      key: 'ESCALATED',
+      label: 'Escalated',
+      completed: report.status === 'ESCALATED',
+      current: report.status === 'ESCALATED',
+      isDanger: true,
+    },
+  ];
+
+  const activeWorkflowSteps = isEscalatedPath ? escalationWorkflowSteps : standardWorkflowSteps;
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/60 backdrop-blur-xs animate-fadeIn">
+      {/* SIDE PANEL CONTAINER */}
+      <div className="relative w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col overflow-hidden border-l border-slate-200">
+        {/* 1. TOP HEADER */}
+        <div className="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-2xl bg-[#256BF5] text-white flex items-center justify-center font-black">
+              <ShieldAlert className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-black text-slate-900 font-mono">
+                  {report.ticket_code}
+                </h3>
+                <NIRAPriorityBadge score={report.priority_score} size="sm" />
+              </div>
+              <p className="text-xs text-slate-500 font-medium">
+                {report.ward} (Ward #{report.ward_number}) •{' '}
+                {report.authority || 'Keralam Municipal Corporation'}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+            aria-label="Close side panel"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* 2. SUB-NAV TABS */}
+        <div className="px-5 border-b border-slate-200 bg-white flex items-center gap-6 text-xs font-black">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`py-3 border-b-2 transition-all ${
+              activeTab === 'overview'
+                ? 'border-[#256BF5] text-[#256BF5]'
+                : 'border-transparent text-slate-500 hover:text-slate-900'
+            }`}
+          >
+            Incident Overview
+          </button>
+          <button
+            onClick={() => setActiveTab('actions')}
+            className={`py-3 border-b-2 transition-all flex items-center gap-1.5 ${
+              activeTab === 'actions'
+                ? 'border-[#256BF5] text-[#256BF5]'
+                : 'border-transparent text-slate-500 hover:text-slate-900'
+            }`}
+          >
+            <span>Operations & Dispatch</span>
+            {isBreached && (
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('notes')}
+            className={`py-3 border-b-2 transition-all ${
+              activeTab === 'notes'
+                ? 'border-[#256BF5] text-[#256BF5]'
+                : 'border-transparent text-slate-500 hover:text-slate-900'
+            }`}
+          >
+            Internal Notes ({report.internal_notes?.length || 0})
+          </button>
+        </div>
+
+        {/* 3. SCROLLABLE BODY */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* TAB 1: INCIDENT OVERVIEW */}
+          {activeTab === 'overview' && (
+            <div className="space-y-6 animate-fadeIn">
+              {/* STATUS WORKFLOW TIMELINE */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between text-xs font-black">
+                  <span className="text-slate-700 uppercase tracking-wider text-[10px]">
+                    Municipal Status Workflow: {isEscalatedPath ? 'Escalation Track' : 'Resolution Track'}
+                  </span>
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                      report.status === 'RESOLVED'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : report.status === 'ESCALATED'
+                        ? 'bg-red-100 text-[#EF4444]'
+                        : report.status === 'IN_PROGRESS'
+                        ? 'bg-blue-100 text-[#256BF5]'
+                        : report.status === 'ASSIGNED'
+                        ? 'bg-indigo-100 text-indigo-800'
+                        : 'bg-amber-100 text-amber-800'
+                    }`}
+                  >
+                    {report.status === 'OPEN' ? 'REPORTED' : report.status.replace('_', ' ')}
+                  </span>
+                </div>
+
+                {/* Visual Step Bar */}
+                <div className={`grid ${isEscalatedPath ? 'grid-cols-4' : 'grid-cols-5'} gap-2 pt-1 text-center`}>
+                  {activeWorkflowSteps.map((step, idx) => (
+                    <div key={idx} className="space-y-1">
+                      <div
+                        className={`h-2 rounded-full transition-all ${
+                          step.completed
+                            ? (step as any).isDanger
+                              ? 'bg-[#EF4444]'
+                              : (step as any).isWarning
+                              ? 'bg-amber-500'
+                              : 'bg-[#256BF5]'
+                            : step.current
+                            ? 'bg-[#FFC800]'
+                            : 'bg-slate-200'
+                        }`}
+                      ></div>
+                      <span className={`text-[10px] font-bold block ${step.current ? 'text-slate-950 font-black' : 'text-slate-500'}`}>
+                        {step.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Alternate SLA Breached / Escalated Alert if active */}
+                {report.status === 'ESCALATED' && (
+                  <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-900 text-xs space-y-1">
+                    <div className="flex items-center gap-1.5 font-black text-red-700">
+                      <AlertOctagon className="w-4 h-4" />
+                      <span>Ticket Formally Escalated to Level 2</span>
+                    </div>
+                    <p className="text-[11px] font-medium leading-relaxed">
+                      {report.escalated_reason ||
+                        'Requires urgent zonal executive intervention.'}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* PHOTOGRAPH & VISUAL CLASSIFICATION */}
+              <div className="rounded-3xl border border-slate-200 overflow-hidden bg-white shadow-xs">
+                <div className="relative h-60 w-full bg-slate-100">
+                  {/* eslint-disable-next-html-element-suppression */}
+                  <img
+                    src={report.photo_url}
+                    alt={report.ticket_code}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-md px-3 py-1 rounded-xl text-[10px] font-black text-slate-800 shadow-sm">
+                    Reported on {new Date(report.created_at).toLocaleDateString()}
+                  </div>
+                  <div className="absolute bottom-3 left-3 right-3 bg-slate-900/80 backdrop-blur-md px-3 py-2 rounded-xl text-white text-xs flex items-center justify-between">
+                    <span className="font-bold truncate">{report.landmark}</span>
+                    <span className="text-[10px] text-blue-300 font-mono">
+                      {report.lat.toFixed(4)}, {report.lng.toFixed(4)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+                        Classified Drainage Issue
+                      </span>
+                      <h4 className="text-base font-black text-slate-900">
+                        {report.issue_type.replace(/_/g, ' ')}
+                      </h4>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-1 rounded-xl bg-blue-50 text-[#256BF5] font-black text-xs border border-blue-100">
+                        Confidence: {report.ai_confidence || 94}%
+                      </span>
+                      <span
+                        className={`px-2.5 py-1 rounded-xl text-xs font-black uppercase ${
+                          report.severity === 'CRITICAL'
+                            ? 'bg-red-100 text-red-700'
+                            : report.severity === 'HIGH'
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-blue-100 text-blue-800'
+                        }`}
+                      >
+                        {report.severity}
+                      </span>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-slate-600 leading-relaxed font-medium bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                    <strong className="text-slate-800 font-bold block mb-0.5">
+                      Citizen Description:
+                    </strong>
+                    {report.description}
+                  </p>
+                </div>
+              </div>
+
+              {/* NIRA PRIORITY SCORE CARD */}
+              <NIRAPriorityCard
+                priorityData={priorityData}
+                showExpandableBreakdown={true}
+                defaultExpanded={false}
+              />
+
+              {/* LOCATION & GEOSPATIAL BOUNDARY DETAILS */}
+              <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-xs space-y-3">
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                  <MapPin className="w-4 h-4 text-[#EF4444]" /> Geographic & Boundary Routing
+                </h4>
+
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200">
+                    <span className="text-[10px] text-slate-400 font-bold block">
+                      Ward Jurisdiction
+                    </span>
+                    <strong className="text-slate-900 font-black">
+                      {report.ward} (Ward #{report.ward_number})
+                    </strong>
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200">
+                    <span className="text-[10px] text-slate-400 font-bold block">
+                      Responsible Authority
+                    </span>
+                    <strong className="text-emerald-800 font-black">
+                      {report.authority || 'Keralam Municipal Corporation'}
+                    </strong>
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200">
+                    <span className="text-[10px] text-slate-400 font-bold block">
+                      Nearby Reports in Ward
+                    </span>
+                    <strong className="text-slate-900 font-black">
+                      {nearbyReportsCount} other active tickets
+                    </strong>
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200">
+                    <span className="text-[10px] text-slate-400 font-bold block">
+                      Assigned Crew
+                    </span>
+                    <strong className="text-[#256BF5] font-black">
+                      {report.assigned_crew || 'Pending Allocation'}
+                    </strong>
+                  </div>
+                </div>
+
+                {/* Hotspot indicator */}
+                {matchingHotspot ? (
+                  <div className="p-3 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-900 flex items-start gap-2">
+                    <Flame className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="font-black block">
+                        Located in Recurrent Flood Hotspot
+                      </strong>
+                      <span className="text-[11px] font-medium text-slate-600">
+                        {matchingHotspot.location_name} (Risk:{' '}
+                        {matchingHotspot.risk_level})
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-[11px] text-slate-500 font-medium">
+                    No chronic flooding hotspot registered at this immediate node.
+                  </div>
+                )}
+              </div>
+
+              {/* SLA & ESCALATION DEADLINE */}
+              <div className="p-5 rounded-3xl bg-slate-50 border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between text-xs font-black">
+                  <span className="text-slate-800 flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-[#256BF5]" /> SLA Monitoring & Timeline
+                  </span>
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${
+                      isBreached
+                        ? 'bg-red-100 text-[#EF4444]'
+                        : remainingHours <= 2
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'bg-blue-100 text-[#256BF5]'
+                    }`}
+                  >
+                    {isBreached
+                      ? `Breached (+${Math.round(Math.abs(remainingHours))}h Overdue)`
+                      : `${Math.round(remainingHours)}h Remaining`}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                  <div className="p-2.5 rounded-xl bg-white border border-slate-200">
+                    <span className="text-[10px] text-slate-400 font-bold block">
+                      Target SLA
+                    </span>
+                    <strong className="font-mono text-slate-900">{slaLimit} Hours</strong>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-white border border-slate-200">
+                    <span className="text-[10px] text-slate-400 font-bold block">
+                      Elapsed
+                    </span>
+                    <strong className="font-mono text-slate-900">
+                      {Math.round(elapsedHours * 10) / 10}h
+                    </strong>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-white border border-slate-200">
+                    <span className="text-[10px] text-slate-400 font-bold block">
+                      Escalation Level
+                    </span>
+                    <strong
+                      className={`font-mono ${
+                        report.status === 'ESCALATED' ? 'text-red-600' : 'text-slate-900'
+                      }`}
+                    >
+                      {report.status === 'ESCALATED' ? 'Level 2 (High)' : 'Level 1 (Zonal)'}
+                    </strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* RESOLUTION EVIDENCE (IF RESOLVED) */}
+              {report.resolution_photo_url && (
+                <div className="p-5 rounded-3xl bg-emerald-50 border border-emerald-200 space-y-3">
+                  <div className="flex items-center gap-2 font-black text-xs text-emerald-800">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span>Resolution Evidence Attached</span>
+                  </div>
+                  <div className="h-44 rounded-2xl overflow-hidden bg-slate-100 border border-emerald-200">
+                    {/* eslint-disable-next-html-element-suppression */}
+                    <img
+                      src={report.resolution_photo_url}
+                      alt="Resolution Clearance Proof"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <p className="text-xs text-slate-700 font-medium">
+                    <strong className="text-slate-900 font-bold">Clearance Notes: </strong>
+                    {report.resolution_notes || 'Drain cleared and unblocked.'}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 2: OPERATIONS & DISPATCH ACTIONS */}
+          {activeTab === 'actions' && (
+            <div className="space-y-6 animate-fadeIn">
+              {/* ACTION 1: ASSIGN CREW */}
+              <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                    <Users className="w-4 h-4 text-[#256BF5]" /> 1. Assign Municipal Action Crew
+                  </h4>
+                  <span className="text-[10px] text-slate-400 font-bold">
+                    Current: {report.assigned_crew || 'None'}
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  {availableCrews.map((crew, idx) => (
+                    <label
+                      key={idx}
+                      className={`flex items-center justify-between p-3 rounded-2xl border text-xs font-bold cursor-pointer transition-all ${
+                        selectedCrew === crew
+                          ? 'bg-blue-50 border-[#256BF5] text-[#256BF5]'
+                          : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      <span>{crew}</span>
+                      <input
+                        type="radio"
+                        name="crewSelect"
+                        checked={selectedCrew === crew}
+                        onChange={() => setSelectedCrew(crew)}
+                        className="text-[#256BF5]"
+                      />
+                    </label>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  disabled={isUpdating}
+                  onClick={handleAssignCrew}
+                  className="w-full py-2.5 rounded-xl bg-[#256BF5] hover:bg-blue-700 text-white font-black text-xs shadow-sm transition-colors"
+                >
+                  {isUpdating ? 'Updating...' : 'Confirm Crew Assignment (Status: ASSIGNED)'}
+                </button>
+              </div>
+
+              {/* ACTION 2: START WORK */}
+              {report.status !== 'IN_PROGRESS' && report.status !== 'RESOLVED' && (
+                <div className="p-5 rounded-3xl bg-blue-50/60 border border-blue-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-black text-[#256BF5] flex items-center gap-1.5">
+                      <Clock className="w-4 h-4" /> 2. Mark Crew On-Site
+                    </h4>
+                    <span className="text-[10px] font-mono text-blue-600 font-bold">
+                      Transition to IN_PROGRESS
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
+                    Changes status to <strong>IN_PROGRESS</strong> to signal that the
+                    dispatched squad has arrived on site with suction pumps or desilting tools.
+                  </p>
+                  <button
+                    type="button"
+                    disabled={isUpdating}
+                    onClick={handleStartWork}
+                    className="w-full py-2.5 rounded-xl bg-[#256BF5] hover:bg-blue-700 text-white font-black text-xs shadow-sm transition-colors"
+                  >
+                    Start Work (IN_PROGRESS)
+                  </button>
+                </div>
+              )}
+
+              {/* ACTION 3: CHANGE PRIORITY / SEVERITY */}
+              <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-xs space-y-3">
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                  <Sliders className="w-4 h-4 text-amber-600" /> 3. Adjust Priority & Severity
+                </h4>
+                <div className="grid grid-cols-4 gap-2">
+                  {(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as SeverityLevel[]).map(sev => (
+                    <button
+                      key={sev}
+                      type="button"
+                      onClick={() => setOverrideSeverity(sev)}
+                      className={`py-2 rounded-xl text-xs font-black border transition-all ${
+                        overrideSeverity === sev
+                          ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
+                          : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      {sev}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  disabled={isUpdating}
+                  onClick={handleChangePriority}
+                  className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs transition-colors"
+                >
+                  Recalculate & Persist Priority Score
+                </button>
+              </div>
+
+              {/* ACTION 4: RESOLUTION EVIDENCE UPLOAD */}
+              <div className="p-5 rounded-3xl bg-emerald-50/70 border border-emerald-200 space-y-3">
+                <h4 className="text-xs font-black text-emerald-900 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" /> 4. Upload Resolution Evidence & Complete
+                </h4>
+
+                <input
+                  ref={resolutionFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleResolutionFileUpload}
+                  className="hidden"
+                />
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => resolutionFileInputRef.current?.click()}
+                    disabled={isUploadingResolution}
+                    className="flex-1 py-2.5 rounded-xl bg-white border border-emerald-300 text-emerald-800 font-black text-xs hover:bg-emerald-100 transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <UploadCloud className="w-4 h-4" />
+                    <span>
+                      {isUploadingResolution ? 'Uploading Photo...' : 'Upload After-Photo'}
+                    </span>
+                  </button>
+                </div>
+
+                <textarea
+                  rows={2}
+                  value={resolutionNotes}
+                  onChange={e => setResolutionNotes(e.target.value)}
+                  placeholder="Enter clearance notes, equipment used, and outflow status..."
+                  className="w-full p-2.5 rounded-xl bg-white border border-emerald-200 text-slate-800 text-xs focus:outline-hidden"
+                ></textarea>
+
+                <button
+                  type="button"
+                  disabled={isUpdating || isUploadingResolution}
+                  onClick={handleConfirmResolve}
+                  className="w-full py-3 rounded-xl bg-[#10B981] hover:bg-emerald-700 text-white font-black text-xs shadow-md transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>Mark Resolved with Evidence</span>
+                </button>
+              </div>
+
+              {/* ACTION 5: ESCALATE TICKET */}
+              {report.status !== 'ESCALATED' && report.status !== 'RESOLVED' && (
+                <div className="p-5 rounded-3xl bg-red-50/70 border border-red-200 space-y-3">
+                  <h4 className="text-xs font-black text-red-900 flex items-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4 text-red-600" /> 5. Escalate to Higher Authority
+                  </h4>
+                  <textarea
+                    rows={2}
+                    value={escalationReason}
+                    onChange={e => setEscalationReason(e.target.value)}
+                    placeholder="Provide reason for administrative escalation..."
+                    className="w-full p-2.5 rounded-xl bg-white border border-red-200 text-slate-800 text-xs focus:outline-hidden"
+                  ></textarea>
+                  <button
+                    type="button"
+                    disabled={isUpdating}
+                    onClick={handleConfirmEscalate}
+                    className="w-full py-2.5 rounded-xl bg-[#EF4444] hover:bg-red-700 text-white font-black text-xs shadow-sm transition-colors"
+                  >
+                    Confirm Administrative Escalation
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 3: INTERNAL NOTES */}
+          {activeTab === 'notes' && (
+            <div className="space-y-4 animate-fadeIn">
+              <form onSubmit={handleAddInternalNote} className="space-y-2">
+                <label className="block text-xs font-black text-slate-800">
+                  Add Municipal Internal Note
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newInternalNote}
+                    onChange={e => setNewInternalNote(e.target.value)}
+                    placeholder="e.g. Suction pump 03 en route via SA Road..."
+                    className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-xs text-slate-900 focus:outline-hidden focus:border-[#256BF5]"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isUpdating || !newInternalNote.trim()}
+                    className="px-4 py-2.5 rounded-xl bg-[#256BF5] hover:bg-blue-700 text-white font-black text-xs shadow-xs transition-colors"
+                  >
+                    Add
+                  </button>
+                </div>
+              </form>
+
+              <div className="space-y-2 pt-2">
+                {report.internal_notes && report.internal_notes.length > 0 ? (
+                  report.internal_notes.map((note, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 leading-relaxed"
+                    >
+                      {note}
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 text-center text-xs text-slate-500 font-medium">
+                    No internal notes recorded on this ticket yet.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
