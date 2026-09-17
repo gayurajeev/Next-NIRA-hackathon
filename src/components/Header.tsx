@@ -96,20 +96,9 @@ export const Header: React.FC<HeaderProps> = ({ openIncidentsCount: propIncident
               </div>
             </Link>
 
-            {/* Desktop Role-Based Navigation */}
+            {/* Desktop Role-Based Navigation — only shown when logged in */}
+            {user && (
             <nav className="hidden md:flex items-center gap-2 bg-[#EDF4FF] p-1.5 rounded-2xl border border-blue-100">
-              {/* 1. PUBLIC VISITOR (Not logged in) */}
-              {!user && (
-                <>
-                  <button
-                    onClick={() => handleOpenAuth('CITIZEN')}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black text-slate-600 hover:text-slate-900 hover:bg-white/80 transition-all"
-                  >
-                    <LogIn className="w-4 h-4 text-[#256BF5]" />
-                    Sign In
-                  </button>
-                </>
-              )}
 
               {/* 2. CITIZEN ROLE */}
               {user && user.role === 'CITIZEN' && (
@@ -198,6 +187,7 @@ export const Header: React.FC<HeaderProps> = ({ openIncidentsCount: propIncident
                 </>
               )}
             </nav>
+            )}
 
             {/* Right Action & User Pill */}
             <div className="flex items-center gap-3">

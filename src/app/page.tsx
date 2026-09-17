@@ -74,7 +74,7 @@ export default function PublicLandingPage() {
             <img
               src="/nira-logo.png"
               alt="NIRA - Official Civic Drainage Logo"
-              className="w-full h-full object-contain"
+              className="w-full h-full object-contain mix-blend-multiply"
             />
           </div>
 
