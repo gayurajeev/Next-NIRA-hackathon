@@ -370,7 +370,7 @@ export const IncidentSidePanel: React.FC<IncidentSidePanelProps> = ({
         {/* 1. TOP HEADER */}
         <div className="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden p-1 shadow-xs">
+            <div className="w-10 h-10 flex items-center justify-center overflow-hidden">
               <img src="/nira-logo.png" alt="NIRA Logo" className="w-full h-full object-contain mix-blend-multiply" />
             </div>
             <div>

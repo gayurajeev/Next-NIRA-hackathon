@@ -69,11 +69,11 @@ export default function PublicLandingPage() {
 
         <div className="max-w-5xl mx-auto flex flex-col items-center text-center space-y-6">
           {/* Official Logo Display */}
-          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-white p-2 shadow-2xl shadow-blue-900/30 border-2 border-white/80 overflow-hidden flex items-center justify-center">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 overflow-hidden flex items-center justify-center">
             <img
               src="/nira-logo.png"
               alt="NIRA - Official Civic Drainage Logo"
-              className="w-full h-full object-contain mix-blend-multiply"
+              className="w-full h-full object-contain"
             />
           </div>
 
@@ -372,7 +372,7 @@ export default function PublicLandingPage() {
       <footer className="border-t border-blue-100 py-10 bg-white mt-auto">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-wrap items-center justify-between gap-4 text-xs font-bold text-slate-500">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-white border border-slate-200 overflow-hidden flex items-center justify-center p-0.5 shadow-xs">
+            <div className="w-8 h-8 overflow-hidden flex items-center justify-center">
               <img src="/nira-logo.png" alt="NIRA Logo" className="w-full h-full object-contain mix-blend-multiply" />
             </div>
             <div>

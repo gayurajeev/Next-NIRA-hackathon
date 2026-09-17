@@ -73,7 +73,7 @@ export const Header: React.FC<HeaderProps> = ({ openIncidentsCount: propIncident
             
             {/* Fund My Crazy Brand Initiative */}
             <Link href={brandHomeLink} className="flex items-center gap-3 group">
-              <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-white border border-slate-200 shadow-md shadow-blue-500/10 overflow-hidden p-1 transition-transform group-hover:scale-105">
+              <div className="flex items-center justify-center w-11 h-11 overflow-hidden transition-transform group-hover:scale-105">
                 <img
                   src="/nira-logo.png"
                   alt="NIRA Logo"

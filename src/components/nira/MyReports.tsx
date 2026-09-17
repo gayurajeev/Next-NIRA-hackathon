@@ -157,7 +157,7 @@ export const MyReports: React.FC<MyReportsProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-200">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center p-1 shrink-0 overflow-hidden">
+            <div className="w-12 h-12 flex items-center justify-center shrink-0 overflow-hidden">
               <img src="/nira-logo.png" alt="NIRA Logo" className="w-full h-full object-contain mix-blend-multiply" />
             </div>
             <div>
