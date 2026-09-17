@@ -153,9 +153,9 @@ export const PublicMap: React.FC<PublicMapProps> = ({ reports, hotspots }) => {
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">
           <div>
-            <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-2xl bg-[#256BF5] text-white flex items-center justify-center font-black">
-                <Map className="w-5 h-5" />
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center p-1 shrink-0 overflow-hidden">
+                <img src="/nira-logo.png" alt="NIRA Logo" className="w-full h-full object-contain" />
               </div>
               <div>
                 <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">

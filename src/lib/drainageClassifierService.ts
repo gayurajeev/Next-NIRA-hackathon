@@ -1,6 +1,6 @@
 /**
  * NIRA — AI-Assisted Drainage Vision Classifier Service
- * Challenge: SC-08 — Canal and storm-drain blockage reporting
+ * Canal and storm-drain blockage reporting & AI classification
  * 
  * DESIGN RATIONALE:
  * Provides automated visual analysis of citizen-submitted drainage photos to detect:

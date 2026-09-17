@@ -45,8 +45,12 @@ export const Header: React.FC<HeaderProps> = ({
           
           {/* Fund My Crazy Brand Initiative */}
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab('citizen')}>
-            <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-[#256BF5] text-white shadow-md shadow-blue-500/25">
-              <Sparkles className="w-6 h-6 text-[#FFC800]" />
+            <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-white border border-slate-200 shadow-md shadow-blue-500/10 overflow-hidden p-1">
+              <img
+                src="/nira-logo.png"
+                alt="NIRA Logo"
+                className="w-full h-full object-contain"
+              />
             </div>
 
             <div>

@@ -127,7 +127,7 @@ export const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({
         </div>
       )}
 
-      {/* 5. SUCCESSFUL AI ANALYSIS DISPLAY (Matches Required SC-08 Specification) */}
+      {/* 5. SUCCESSFUL AI ANALYSIS DISPLAY (Matches Required Specification) */}
       {!isAnalyzing && !error && result && (
         <div className="space-y-4 animate-fadeIn">
           {/* TOP ROW: CATEGORY, CONFIDENCE GAUGE, SEVERITY BADGE */}

@@ -3,7 +3,7 @@ import { DrainageReport } from '../src/lib/niraTypes';
 
 function runTests() {
   console.log('====================================================');
-  console.log('TESTING NIRA SLA & ESCALATION ENGINE (SC-08)');
+  console.log('TESTING NIRA SLA & ESCALATION ENGINE');
   console.log('====================================================\n');
 
   const baseTime = 1773750000000; // Fixed epoch for reproducible testing

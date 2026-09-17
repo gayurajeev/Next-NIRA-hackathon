@@ -80,6 +80,15 @@ function NiraMainApp() {
 
         <div className="max-w-5xl mx-auto flex flex-col items-center text-center space-y-5">
           
+          {/* Official Logo Display */}
+          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-white p-2 shadow-2xl shadow-blue-900/30 border-2 border-white/80 overflow-hidden flex items-center justify-center">
+            <img
+              src="/nira-logo.png"
+              alt="NIRA - Official Civic Drainage Logo"
+              className="w-full h-full object-contain"
+            />
+          </div>
+
           {/* Civic Tech Initiative badge */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white text-slate-900 text-xs font-black shadow-md">
             <span className="text-base">✦</span>
@@ -319,11 +328,15 @@ function NiraMainApp() {
       {/* FOOTER (Fund My Crazy Style) */}
       <footer className="border-t border-blue-100 py-10 bg-white mt-auto">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-wrap items-center justify-between gap-4 text-xs font-bold text-slate-500">
-          <div className="flex items-center gap-2">
-            <span className="w-6 h-6 rounded-lg bg-[#256BF5] text-white flex items-center justify-center font-black">N</span>
-            <span className="text-slate-900 font-black text-sm">NIRA</span> — Neighborhood Intelligence & Response Assistant
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-white border border-slate-200 overflow-hidden flex items-center justify-center p-0.5 shadow-xs">
+              <img src="/nira-logo.png" alt="NIRA Logo" className="w-full h-full object-contain" />
+            </div>
+            <div>
+              <span className="text-slate-900 font-black text-sm">NIRA</span> — Neighborhood Intelligence & Response Assistant
+            </div>
           </div>
-          <p>© 2026 NIRA Keralam Hackathon. Challenge SC-08 — Civic Tech Drainage Intelligence.</p>
+          <p>© 2026 NIRA Keralam. Civic Tech Drainage Intelligence & Municipal Operations Platform.</p>
         </div>
       </footer>
 

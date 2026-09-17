@@ -1,6 +1,6 @@
 /**
  * NIRA — Keralam Municipal Corporation (KMC) Ward Boundary & Routing Engine
- * Challenge: SC-08 — Canal and storm-drain blockage reporting
+ * Canal and storm-drain blockage reporting & operational GIS routing
  * 
  * DESIGN RATIONALE:
  * Citizens reporting a blocked storm-drain rarely know their administrative ward number
@@ -58,7 +58,7 @@ export interface WardLookupResult {
 
 /**
  * KERALAM MUNICIPAL CORPORATION - PROTOTYPE DRAINAGE WARD BOUNDARY DATASET
- * Clearly documented prototype boundaries for the Keralam Civic Tech Hackathon SC-08 Challenge.
+ * Clearly documented prototype boundaries for the Keralam Civic Tech initiative.
  */
 export const KOCHI_PROTOTYPE_WARDS: KmcWardDefinition[] = [
   {

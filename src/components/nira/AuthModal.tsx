@@ -66,8 +66,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         {/* Modal Header */}
         <div className="text-center space-y-1">
-          <div className="w-12 h-12 rounded-2xl bg-[#256BF5] text-white mx-auto flex items-center justify-center shadow-lg shadow-blue-500/25 mb-3">
-            <ShieldCheck className="w-7 h-7 text-[#FFC800]" />
+          <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 mx-auto flex items-center justify-center shadow-md shadow-blue-500/10 mb-3 overflow-hidden p-1.5">
+            <img src="/nira-logo.png" alt="NIRA Logo" className="w-full h-full object-contain" />
           </div>
           <h3 className="text-2xl font-black text-slate-900">
             Welcome to NIRA

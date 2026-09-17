@@ -528,7 +528,7 @@ export default function LiveMapInner({
                   Longitude: {clickedCoords.lng.toFixed(6)}
                 </p>
                 <p className="text-[10px] text-slate-500 font-medium">
-                  Will be recorded with your SC-08 report.
+                  Will be recorded with your drainage report.
                 </p>
               </div>
             </Popup>

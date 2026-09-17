@@ -227,16 +227,21 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
       
       {/* SECTION HEADER */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-100">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-[#256BF5] text-xs font-black mb-2">
-            <Sparkles className="w-3.5 h-3.5" /> AI Vision Civic Scanner
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center p-1 shrink-0 overflow-hidden">
+            <img src="/nira-logo.png" alt="NIRA Logo" className="w-full h-full object-contain" />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
-            Submit a Drainage Issue
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-600 font-medium mt-1">
-            Snap or upload a photo, let AI classify the blockage, detect ward officer, and create a live tracking ticket.
-          </p>
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-[#256BF5] text-xs font-black mb-1.5">
+              <Sparkles className="w-3.5 h-3.5" /> AI Vision Civic Scanner
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
+              Submit a Drainage Issue
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600 font-medium mt-1">
+              Snap or upload a photo, let AI classify the blockage, detect ward officer, and create a live tracking ticket.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -351,7 +356,7 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                 2. Location & Ward Identification
               </h3>
               <span className="text-[10px] font-mono text-slate-400 font-bold">
-                SC-08 Boundary Engine
+                GIS Ward Boundary Engine
               </span>
             </div>
 

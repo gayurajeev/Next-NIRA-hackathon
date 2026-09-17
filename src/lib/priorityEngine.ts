@@ -1,6 +1,6 @@
 /**
  * NIRA Priority Score Engine
- * Challenge: SC-08 — Canal and storm-drain blockage reporting
+ * Canal and storm-drain blockage reporting & deterministic prioritization
  * 
  * PROTOTYPE OPERATIONAL PRIORITIZATION:
  * Transparent, deterministic prioritization engine to assist municipal crew dispatch

@@ -1,6 +1,6 @@
 /**
  * NIRA SLA and Escalation Engine
- * Challenge SC-08 — Civic Tech Drainage Intelligence
+ * Civic Tech Drainage Intelligence & Municipal Operations Platform
  * 
  * Prototype SLA Rules:
  * - HIGH / CRITICAL : 4 hours

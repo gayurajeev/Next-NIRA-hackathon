@@ -5,6 +5,11 @@ export const metadata: Metadata = {
   title: "NIRA - Intelligent Civic Drainage Reporting & Response System (Keralam)",
   description: "Intelligent civic drainage reporting, AI issue classification, ward-level dispatch, and flood hotspot detection for Keralam Municipal Corporation.",
   keywords: ["NIRA", "Civic Tech", "Keralam Drainage", "Fund My Crazy", "Keralam Municipal Corporation", "Storm Drain", "Hotspot Detection"],
+  icons: {
+    icon: "/nira-logo.png",
+    shortcut: "/nira-logo.png",
+    apple: "/nira-logo.png",
+  },
 };
 
 export default function RootLayout({
