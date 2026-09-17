@@ -77,7 +77,7 @@ export const Header: React.FC<HeaderProps> = ({ openIncidentsCount: propIncident
                 <img
                   src="/nira-logo.png"
                   alt="NIRA Logo"
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-contain mix-blend-multiply"
                 />
               </div>
 

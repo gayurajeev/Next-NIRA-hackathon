@@ -229,7 +229,7 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-100">
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center p-1 shrink-0 overflow-hidden">
-            <img src="/nira-logo.png" alt="NIRA Logo" className="w-full h-full object-contain" />
+            <img src="/nira-logo.png" alt="NIRA Logo" className="w-full h-full object-contain mix-blend-multiply" />
           </div>
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-[#256BF5] text-xs font-black mb-1.5">

@@ -73,7 +73,7 @@ export default function PublicLandingPage() {
             <img
               src="/nira-logo.png"
               alt="NIRA - Official Civic Drainage Logo"
-              className="w-full h-full object-contain"
+              className="w-full h-full object-contain mix-blend-multiply"
             />
           </div>
 
@@ -373,7 +373,7 @@ export default function PublicLandingPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-wrap items-center justify-between gap-4 text-xs font-bold text-slate-500">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-white border border-slate-200 overflow-hidden flex items-center justify-center p-0.5 shadow-xs">
-              <img src="/nira-logo.png" alt="NIRA Logo" className="w-full h-full object-contain" />
+              <img src="/nira-logo.png" alt="NIRA Logo" className="w-full h-full object-contain mix-blend-multiply" />
             </div>
             <div>
               <span className="text-slate-900 font-black text-sm">NIRA</span> — Neighborhood Intelligence & Response Assistant
