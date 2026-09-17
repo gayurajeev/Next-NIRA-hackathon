@@ -101,18 +101,6 @@ export const Header: React.FC<HeaderProps> = ({ openIncidentsCount: propIncident
               {/* 1. PUBLIC VISITOR (Not logged in) */}
               {!user && (
                 <>
-                  <Link
-                    href="/#public-map"
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${
-                      pathname === '/public-map'
-                        ? 'bg-[#10B981] text-white shadow-md shadow-green-500/30'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
-                    }`}
-                  >
-                    <Map className="w-4 h-4 text-[#10B981]" />
-                    Public Map
-                  </Link>
-
                   <button
                     onClick={() => handleOpenAuth('CITIZEN')}
                     className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black text-slate-600 hover:text-slate-900 hover:bg-white/80 transition-all"
@@ -245,7 +233,7 @@ export const Header: React.FC<HeaderProps> = ({ openIncidentsCount: propIncident
               ) : (
                 <button
                   onClick={() => handleOpenAuth('CITIZEN')}
-                  className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#EDF4FF] border border-blue-200 text-[#256BF5] font-black text-xs hover:bg-blue-100 transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-[#256BF5] hover:bg-blue-700 text-white font-black text-xs shadow-md shadow-blue-500/20 hover:scale-105 active:scale-95 transition-all"
                 >
                   <LogIn className="w-3.5 h-3.5" />
                   <span>Log In</span>
@@ -293,13 +281,6 @@ export const Header: React.FC<HeaderProps> = ({ openIncidentsCount: propIncident
             <div className="md:hidden py-3 px-2 border-t border-slate-100 flex flex-col gap-1.5 bg-white animate-fadeIn">
               {!user && (
                 <>
-                  <Link
-                    href="/#public-map"
-                    className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-black text-slate-700 hover:bg-[#EDF4FF] hover:text-[#256BF5]"
-                  >
-                    <Map className="w-4 h-4 text-[#10B981]" />
-                    Public Map
-                  </Link>
                   <button
                     onClick={() => handleOpenAuth('CITIZEN')}
                     className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-black text-[#256BF5] hover:bg-blue-50 text-left"
