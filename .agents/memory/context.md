@@ -22,6 +22,7 @@
 
 ## User Preferences & Workflow Rules
 - **Browser & Localhost Testing**: Do NOT open `localhost` URLs or spawn browser subagents automatically. The user will manually test and check the UI on `http://localhost:3000`.
+- **Always Push Everything to GitHub**: The user mandates that all modifications, feature additions, fixes, and commits must ALWAYS be pushed to GitHub (`git push origin main`) immediately upon completion. Never leave local commits or unstaged work unpushed.
 
 ## UI/UX Design Requirements (Fund My Crazy UI)
 - **Design Inspiration**: The project UI has been explicitly completely restyled to look exactly like the "Fund My Crazy" hackathon landing page (from a provided screenshot). 

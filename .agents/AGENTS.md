@@ -34,3 +34,4 @@ Welcome to the **Anavandi** project repository — a state-of-the-art public tra
 3. **Simulated Live Telemetry**: All transit components must support live location polling and simulated bus movement for real-time map feel.
 4. **Commuter Safety First**: SOS Emergency action button accessible within 1 click on both mobile and desktop screens.
 5. **Localhost & Browser Verification**: Do NOT automatically launch browser subagents or open `localhost` URLs. The user will inspect and test the running application locally themselves.
+6. **Always Push Everything to GitHub**: After completing any task, feature implementation, refactor, or bug fix, ALWAYS commit and push all changes directly to the remote GitHub repository (`git push origin main`). Never leave unpushed local commits.
