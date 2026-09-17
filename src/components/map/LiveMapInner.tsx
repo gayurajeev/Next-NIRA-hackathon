@@ -532,12 +532,36 @@ export default function LiveMapInner({
               }}
             >
               <Popup className="custom-leaflet-popup">
-                <div className="w-64 space-y-3 p-3">
-                  {/* Thumbnail */}
-                  <div className="w-full h-28 rounded-xl bg-slate-100 overflow-hidden border border-slate-200">
-                    {/* eslint-disable-next-html-element-suppression */}
-                    <img src={rep.photo_url} alt={rep.issue_type} className="w-full h-full object-cover" />
-                  </div>
+                <div className="w-64 space-y-2.5 p-3">
+                  {/* Thumbnail: Single or Before/After for Resolved */}
+                  {rep.status === 'RESOLVED' && rep.resolution_photo_url ? (
+                    <div className="space-y-1">
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <div className="space-y-0.5">
+                          <span className="text-[9px] font-black text-red-600 block">Before</span>
+                          <div className="w-full h-20 rounded-lg bg-slate-100 overflow-hidden border border-slate-200">
+                            {/* eslint-disable-next-html-element-suppression */}
+                            <img src={rep.photo_url} alt="Before" className="w-full h-full object-cover" />
+                          </div>
+                        </div>
+                        <div className="space-y-0.5">
+                          <span className="text-[9px] font-black text-emerald-600 block">After</span>
+                          <div className="w-full h-20 rounded-lg bg-emerald-50 overflow-hidden border-2 border-emerald-400">
+                            {/* eslint-disable-next-html-element-suppression */}
+                            <img src={rep.resolution_photo_url} alt="After Evidence" className="w-full h-full object-cover" />
+                          </div>
+                        </div>
+                      </div>
+                      <span className="text-[9px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md inline-block">
+                        ✓ Verified Cleared Evidence
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="w-full h-28 rounded-xl bg-slate-100 overflow-hidden border border-slate-200">
+                      {/* eslint-disable-next-html-element-suppression */}
+                      <img src={rep.photo_url} alt={rep.issue_type} className="w-full h-full object-cover" />
+                    </div>
+                  )}
 
                   <div>
                     <div className="flex items-center justify-between">
@@ -552,8 +576,13 @@ export default function LiveMapInner({
                         {rep.status}
                       </span>
                     </div>
-                    <h4 className="text-xs font-black text-slate-900 mt-1">{rep.issue_type.replace(/_/g, ' ')}</h4>
+                    <h4 className="text-xs font-black text-slate-900 mt-0.5">{rep.issue_type.replace(/_/g, ' ')}</h4>
                     <p className="text-[10px] text-slate-500 font-medium">{rep.ward} • {rep.landmark}</p>
+                    {rep.assigned_crew && (
+                      <p className="text-[10px] font-bold text-emerald-700 mt-0.5">
+                        👷 Crew: {rep.assigned_crew}
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[10px]">

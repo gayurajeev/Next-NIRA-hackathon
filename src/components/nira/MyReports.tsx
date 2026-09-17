@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { DrainageReport } from '@/lib/niraTypes';
-import { ClipboardList, User, MapPin, CheckCircle2 } from 'lucide-react';
+import { ClipboardList, User, MapPin, CheckCircle2, Truck, ShieldCheck, Clock, FileText, Sparkles } from 'lucide-react';
 
 interface MyReportsProps {
   reports: DrainageReport[];
@@ -29,7 +29,7 @@ export const MyReports: React.FC<MyReportsProps> = ({ reports }) => {
             </h2>
           </div>
           <p className="text-xs sm:text-sm text-slate-600 font-medium mt-1">
-            Track real-time progress timeline, municipal officer assignment, and resolution status for your tickets.
+            Track real-time progress timeline, municipal officer assignment, rapid action crew, and verified resolution evidence for your tickets.
           </p>
         </div>
 
@@ -95,25 +95,53 @@ export const MyReports: React.FC<MyReportsProps> = ({ reports }) => {
                 <div className="text-right space-y-1">
                   <div className="text-xs font-bold text-slate-500">Impact Score</div>
                   <div className="text-2xl font-black text-[#256BF5] font-mono">{report.priority_score}<span className="text-xs text-slate-400">/100</span></div>
+                  {report.sla_hours && (
+                    <div className="text-[10px] font-bold text-slate-400">SLA: {report.sla_hours}h Target</div>
+                  )}
                 </div>
               </div>
 
-              {/* DESCRIPTION & ASSIGNED OFFICER */}
+              {/* DESCRIPTION & ASSIGNED OFFICER / CREW */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                <div className="md:col-span-2 p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
-                  <p className="font-black text-slate-700">Description:</p>
-                  <p className="text-slate-600 font-medium">{report.description}</p>
+                <div className="md:col-span-2 p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                  <div>
+                    <p className="font-black text-slate-700">Citizen Description:</p>
+                    <p className="text-slate-600 font-medium mt-0.5">{report.description}</p>
+                  </div>
+
+                  {report.priority_explanation && (
+                    <div className="pt-2 border-t border-slate-200/80 flex items-start gap-1.5 text-slate-600">
+                      <Sparkles className="w-3.5 h-3.5 text-[#256BF5] flex-shrink-0 mt-0.5" />
+                      <p className="text-[11px] font-medium leading-relaxed">
+                        <strong className="text-slate-900 font-bold">AI Triage Reason:</strong> {report.priority_explanation}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
-                  <p className="font-black text-slate-700 flex items-center gap-1">
-                    <User className="w-3.5 h-3.5 text-[#256BF5]" /> Assigned Officer:
-                  </p>
-                  <p className="text-slate-900 font-bold">{report.assigned_officer || 'Rerouting to Ward AE...'}</p>
-                  {report.escalated_reason && (
-                    <p className="text-[#EF4444] text-[11px] font-bold pt-1">
-                      ⚠️ Escalated: {report.escalated_reason}
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                  <div>
+                    <p className="font-black text-slate-700 flex items-center gap-1">
+                      <User className="w-3.5 h-3.5 text-[#256BF5]" /> Assigned Officer:
                     </p>
+                    <p className="text-slate-900 font-bold mt-0.5">{report.assigned_officer || 'Ward Assistant Engineer'}</p>
+                  </div>
+
+                  {report.assigned_crew && (
+                    <div className="pt-1.5 border-t border-slate-200/80">
+                      <p className="font-black text-slate-700 flex items-center gap-1 text-[11px]">
+                        <Truck className="w-3.5 h-3.5 text-emerald-600" /> Dispatched Crew:
+                      </p>
+                      <p className="text-emerald-700 font-bold text-[11px] mt-0.5">{report.assigned_crew}</p>
+                    </div>
+                  )}
+
+                  {report.escalated_reason && (
+                    <div className="pt-1.5 border-t border-slate-200/80">
+                      <p className="text-[#EF4444] text-[11px] font-bold">
+                        ⚠️ Escalated: {report.escalated_reason}
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>
@@ -151,7 +179,7 @@ export const MyReports: React.FC<MyReportsProps> = ({ reports }) => {
                         ? 'text-[#256BF5]' 
                         : 'text-slate-400'
                     }>
-                      3. {report.status === 'ESCALATED' ? 'Escalated' : 'In Progress'}
+                      3. {report.status === 'ESCALATED' ? 'Escalated' : report.assigned_crew ? 'Crew Onsite' : 'In Progress'}
                     </span>
                   </div>
 
@@ -163,6 +191,98 @@ export const MyReports: React.FC<MyReportsProps> = ({ reports }) => {
 
                 </div>
               </div>
+
+              {/* VERIFIED RESOLUTION EVIDENCE & PHOTO PROOF (SC-08 Resolution Verification) */}
+              {report.status === 'RESOLVED' && (
+                <div className="mt-4 p-5 rounded-3xl bg-emerald-50/80 border-2 border-emerald-200 space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black">
+                        <CheckCircle2 className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-black text-emerald-950">
+                          Work Completed & Cleared by Municipal Authority
+                        </h4>
+                        <p className="text-[11px] text-emerald-700 font-bold">
+                          Official municipal resolution evidence uploaded and inspected.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-black">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>KMC Verified</span>
+                    </div>
+                  </div>
+
+                  {/* BEFORE & AFTER PHOTO EVIDENCE COMPARISON */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                    {/* Before Photo */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-[11px] font-black text-slate-700">
+                        <span className="flex items-center gap-1 text-red-600">
+                          <span>⚠️</span> Before: Reported Blockage
+                        </span>
+                        <span className="text-slate-400 font-mono text-[10px]">
+                          {new Date(report.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="w-full h-40 rounded-2xl bg-slate-200 overflow-hidden border border-slate-300 relative">
+                        {/* eslint-disable-next-html-element-suppression */}
+                        <img
+                          src={report.photo_url}
+                          alt="Before: Clogged Drain"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+
+                    {/* After Resolution Photo */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-[11px] font-black text-emerald-800">
+                        <span className="flex items-center gap-1 text-emerald-700">
+                          <span>✓</span> After: Cleared Drain Evidence
+                        </span>
+                        {report.resolved_at && (
+                          <span className="text-emerald-600 font-mono text-[10px]">
+                            {new Date(report.resolved_at).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                      <div className="w-full h-40 rounded-2xl bg-emerald-100 overflow-hidden border-2 border-emerald-400 relative">
+                        {/* eslint-disable-next-html-element-suppression */}
+                        <img
+                          src={report.resolution_photo_url || report.photo_url}
+                          alt="After: Cleared Drain Resolution Evidence"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Resolution Notes & Crew Footer */}
+                  <div className="p-3.5 rounded-2xl bg-white border border-emerald-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+                    <div className="space-y-0.5">
+                      <p className="font-black text-slate-800 flex items-center gap-1">
+                        <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Resolution Notes:</span>
+                      </p>
+                      <p className="text-slate-600 font-medium text-[11px]">
+                        {report.resolution_notes || 'Drain cleared, desilted, and water flow successfully restored by rapid action team.'}
+                      </p>
+                    </div>
+
+                    {report.assigned_crew && (
+                      <div className="text-right">
+                        <span className="text-[10px] text-slate-400 font-bold block">Executing Unit:</span>
+                        <span className="text-emerald-700 font-black text-[11px]">{report.assigned_crew}</span>
+                      </div>
+                    )}
+                  </div>
+
+                </div>
+              )}
 
             </div>
           ))

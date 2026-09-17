@@ -23,6 +23,8 @@ export interface DrainageReport {
   ward: string;
   ward_number: number;
   priority_score: number; // 0 to 100
+  priority_explanation?: string;
+  sla_hours?: number;
   status: ReportStatus;
   lat: number;
   lng: number;
@@ -34,6 +36,10 @@ export interface DrainageReport {
   updated_at: string;
   escalated_reason?: string;
   assigned_officer?: string;
+  assigned_crew?: string;
+  resolution_photo_url?: string;
+  resolved_at?: string;
+  resolution_notes?: string;
 }
 
 export interface HotspotCluster {

@@ -30,8 +30,15 @@ function NiraMainApp() {
           niraService.getReports(),
           niraService.getHotspots(),
         ]);
+        const dynamicClusters = niraService.detectDynamicHotspots(fetchedReports);
+        const existingIds = new Set(fetchedHotspots.map(h => h.id));
+        const combinedHotspots = [
+          ...fetchedHotspots,
+          ...dynamicClusters.filter((d: HotspotCluster) => !existingIds.has(d.id)),
+        ];
+
         setReports(fetchedReports);
-        setHotspots(fetchedHotspots);
+        setHotspots(combinedHotspots.length > 0 ? combinedHotspots : fetchedHotspots);
       } catch (err) {
         console.error('Failed loading NIRA data:', err);
       } finally {
@@ -42,13 +49,27 @@ function NiraMainApp() {
   }, []);
 
   const handleReportCreated = (newReport: DrainageReport) => {
-    setReports(prev => [newReport, ...prev]);
+    setReports(prev => {
+      const updated = [newReport, ...prev];
+      const dynamicClusters = niraService.detectDynamicHotspots(updated);
+      setHotspots(prevHotspots => {
+        const staticHotspots = prevHotspots.filter(h => !h.id.startsWith('dyn-'));
+        return [...staticHotspots, ...dynamicClusters];
+      });
+      return updated;
+    });
   };
 
   const handleReportUpdated = (updatedReport: DrainageReport) => {
-    setReports(prev =>
-      prev.map(r => (r.id === updatedReport.id ? updatedReport : r))
-    );
+    setReports(prev => {
+      const updated = prev.map(r => (r.id === updatedReport.id ? updatedReport : r));
+      const dynamicClusters = niraService.detectDynamicHotspots(updated);
+      setHotspots(prevHotspots => {
+        const staticHotspots = prevHotspots.filter(h => !h.id.startsWith('dyn-'));
+        return [...staticHotspots, ...dynamicClusters];
+      });
+      return updated;
+    });
   };
 
   return (
