@@ -17,24 +17,15 @@ export interface AuthUser {
 interface AuthContextType {
   user: AuthUser | null;
   isLoading: boolean;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   signInAuthority: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
-  setDemoCitizen: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const DEMO_CITIZEN: AuthUser = {
-  id: 'usr-citizen-1',
-  name: 'Rahul Nair',
-  email: 'rahul.citizen@gmail.com',
-  role: 'CITIZEN',
-  avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
-};
-
 const GOV_AUTHORITY: AuthUser = {
-  id: 'usr-admin-1',
+  id: 'usr-admin-kmc',
   name: 'Executive Engineer (KMC)',
   email: 'admin@nira.in',
   role: 'GOVERNMENT',
@@ -46,18 +37,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Load saved session on mount
+  // Load saved real session on mount
   useEffect(() => {
+    // 1. Check active Supabase session
+    if (supabase) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          const isGov = session.user.email === 'admin@nira.in';
+          const newUser: AuthUser = {
+            id: session.user.id,
+            name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Citizen',
+            email: session.user.email || '',
+            role: isGov ? 'GOVERNMENT' : 'CITIZEN',
+            avatar_url: session.user.user_metadata?.avatar_url,
+            department: isGov ? 'Kochi Municipal Drainage & Disaster Cell' : undefined,
+          };
+          setUser(newUser);
+          localStorage.setItem('nira_auth_user', JSON.stringify(newUser));
+          setIsLoading(false);
+          return;
+        }
+      });
+    }
+
+    // 2. Check saved localStorage session
     try {
       const saved = localStorage.getItem('nira_auth_user');
       if (saved) {
-        setUser(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        // Ensure we purge any previous fake demo session
+        if (parsed?.id === 'usr-citizen-1' || parsed?.email === 'rahul.citizen@gmail.com') {
+          localStorage.removeItem('nira_auth_user');
+          setUser(null);
+        } else {
+          setUser(parsed);
+        }
       } else {
-        // Default to demo citizen for seamless demo experience
-        setUser(DEMO_CITIZEN);
+        setUser(null);
       }
     } catch {
-      setUser(DEMO_CITIZEN);
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
@@ -69,14 +88,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const isGov = session.user.email === 'admin@nira.in';
           const newUser: AuthUser = {
             id: session.user.id,
-            name: session.user.user_metadata?.full_name || (isGov ? 'Executive Engineer (KMC)' : 'Verified Citizen'),
+            name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Citizen',
             email: session.user.email || '',
             role: isGov ? 'GOVERNMENT' : 'CITIZEN',
-            avatar_url: session.user.user_metadata?.avatar_url || (isGov ? GOV_AUTHORITY.avatar_url : DEMO_CITIZEN.avatar_url),
+            avatar_url: session.user.user_metadata?.avatar_url,
             department: isGov ? 'Kochi Municipal Drainage & Disaster Cell' : undefined,
           };
           setUser(newUser);
           localStorage.setItem('nira_auth_user', JSON.stringify(newUser));
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+          localStorage.removeItem('nira_auth_user');
         }
       });
 
@@ -86,24 +108,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const signInWithGoogle = async () => {
-    if (supabase) {
-      try {
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
-          },
-        });
-        if (error) throw error;
-        return;
-      } catch (err) {
-        console.warn('Google OAuth redirected or fallback to citizen profile:', err);
-      }
+  const signInWithGoogle = async (): Promise<{ success: boolean; error?: string }> => {
+    if (!supabase) {
+      return { success: false, error: 'Supabase client is not configured.' };
     }
-    // Fallback: Set citizen session for instant demo testing
-    setUser(DEMO_CITIZEN);
-    localStorage.setItem('nira_auth_user', JSON.stringify(DEMO_CITIZEN));
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
+        },
+      });
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Failed to initiate Google sign-in' };
+    }
   };
 
   const signInAuthority = async (email: string, pass: string): Promise<{ success: boolean; error?: string }> => {
@@ -138,7 +160,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return { success: true };
         }
       } catch {
-        // Continue to return error below
+        // Continue
       }
     }
 
@@ -160,11 +182,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('nira_auth_user');
   };
 
-  const setDemoCitizen = () => {
-    setUser(DEMO_CITIZEN);
-    localStorage.setItem('nira_auth_user', JSON.stringify(DEMO_CITIZEN));
-  };
-
   return (
     <AuthContext.Provider
       value={{
@@ -173,7 +190,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signInWithGoogle,
         signInAuthority,
         signOut,
-        setDemoCitizen,
       }}
     >
       {children}

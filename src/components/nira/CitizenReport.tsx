@@ -47,7 +47,7 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
   const [landmark, setLandmark] = useState<string>('Opposite Metro Pillar 842, SA Road');
   const [description, setDescription] = useState<string>('Storm drain heavily blocked with plastic waste and mud. Water overflowing onto pedestrian walkway.');
   const [reporterName, setReporterName] = useState<string>(user?.name || '');
-  const [reporterPhone, setReporterPhone] = useState<string>('+91 98470 12345');
+  const [reporterPhone, setReporterPhone] = useState<string>('');
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -213,7 +213,7 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                 </button>
 
                 <div>
-                  <p className="text-[11px] text-slate-500 font-bold mb-1.5">Or select demo issue photo:</p>
+                  <p className="text-[11px] text-slate-500 font-bold mb-1.5">Or choose reference scenario photo:</p>
                   <div className="grid grid-cols-3 gap-2">
                     {SAMPLE_PHOTOS.map((sample, idx) => (
                       <button

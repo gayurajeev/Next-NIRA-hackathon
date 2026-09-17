@@ -16,6 +16,7 @@ function NiraMainApp() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'citizen' | 'my-reports' | 'command' | 'public-map'>('citizen');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [authModalRole, setAuthModalRole] = useState<'CITIZEN' | 'GOVERNMENT'>('CITIZEN');
   
   // Data states
   const [reports, setReports] = useState<DrainageReport[]>([]);
@@ -58,7 +59,10 @@ function NiraMainApp() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         openIncidentsCount={reports.filter(r => r.status === 'OPEN' || r.status === 'ESCALATED').length}
-        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onOpenAuthModal={() => {
+          setAuthModalRole('CITIZEN');
+          setIsAuthModalOpen(true);
+        }}
       />
 
       {/* HERO SECTION: ROYAL BLUE ARCH (Fund My Crazy Signature Element) */}
@@ -264,7 +268,10 @@ function NiraMainApp() {
                 reports={reports}
                 hotspots={hotspots}
                 onReportUpdated={handleReportUpdated}
-                onOpenAuthModal={() => setIsAuthModalOpen(true)}
+                onOpenAuthModal={() => {
+                  setAuthModalRole('GOVERNMENT');
+                  setIsAuthModalOpen(true);
+                }}
               />
             )}
 
@@ -283,6 +290,7 @@ function NiraMainApp() {
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
+        defaultRole={authModalRole}
       />
 
       {/* FOOTER (Fund My Crazy Style) */}

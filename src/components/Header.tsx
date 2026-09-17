@@ -140,7 +140,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <span className={`text-[9px] font-black uppercase px-1.5 py-0.2 rounded ${
                     user.role === 'GOVERNMENT' ? 'bg-[#FFC800] text-slate-950' : 'bg-blue-100 text-[#256BF5]'
                   }`}>
-                    {user.role === 'GOVERNMENT' ? 'Authority (admin@nira.in)' : 'Google Citizen'}
+                    {user.role === 'GOVERNMENT' ? 'Authority (admin@nira.in)' : 'Citizen (Google)'}
                   </span>
                 </div>
 
@@ -150,11 +150,19 @@ export const Header: React.FC<HeaderProps> = ({
                 >
                   Switch
                 </button>
+
+                <button
+                  onClick={signOut}
+                  title="Sign Out"
+                  className="p-1 rounded-lg text-slate-400 hover:text-red-500 transition-colors"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
               </div>
             ) : (
               <button
                 onClick={onOpenAuthModal}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#EDF4FF] border border-blue-200 text-[#256BF5] font-black text-xs hover:bg-blue-100 transition-colors"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#EDF4FF] border border-blue-200 text-[#256BF5] font-black text-xs hover:bg-blue-100 transition-colors"
               >
                 <LogIn className="w-3.5 h-3.5" />
                 <span>Log In</span>

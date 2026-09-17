@@ -15,7 +15,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onClose,
   defaultRole = 'CITIZEN',
 }) => {
-  const { signInWithGoogle, signInAuthority, setDemoCitizen } = useAuth();
+  const { signInWithGoogle, signInAuthority } = useAuth();
   const [activeTab, setActiveTab] = useState<UserRole>(defaultRole);
   const [email, setEmail] = useState<string>('admin@nira.in');
   const [password, setPassword] = useState<string>('nira@123');
@@ -41,14 +41,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   const handleGoogleClick = async () => {
     setIsSubmitting(true);
-    await signInWithGoogle();
+    setErrorMsg('');
+    const res = await signInWithGoogle();
     setIsSubmitting(false);
-    onClose();
-  };
 
-  const handleQuickCitizen = () => {
-    setDemoCitizen();
-    onClose();
+    if (res && !res.success && res.error) {
+      setErrorMsg(res.error);
+    } else {
+      onClose();
+    }
   };
 
   return (
@@ -114,9 +115,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {/* CITIZEN TAB: GOOGLE AUTH */}
         {activeTab === 'CITIZEN' && (
           <div className="space-y-4 text-center">
-            <p className="text-xs text-slate-600 font-medium">
-              Citizens can log in with their Google account to submit photo drainage reports and track ticket timelines.
+            <p className="text-xs text-slate-600 font-medium leading-relaxed">
+              Sign in with your Google account to submit photo drainage reports, receive municipal status updates, and track resolution timelines.
             </p>
+
+            {errorMsg && (
+              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-[#EF4444] text-xs font-bold flex items-center gap-2 text-left">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
 
             {/* Official Google Button */}
             <button
@@ -143,19 +151,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                 />
               </svg>
-              <span>Sign in with Google</span>
+              <span>{isSubmitting ? 'Connecting Google...' : 'Sign in with Google'}</span>
             </button>
-
-            {/* Quick Demo Shortcut */}
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={handleQuickCitizen}
-                className="w-full py-2.5 rounded-xl bg-blue-50 text-[#256BF5] font-black text-xs hover:bg-blue-100 transition-colors"
-              >
-                Instant Citizen Demo Login ➔
-              </button>
-            </div>
           </div>
         )}
 

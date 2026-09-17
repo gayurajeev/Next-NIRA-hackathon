@@ -79,18 +79,19 @@ export const AuthorityCommandCenter: React.FC<AuthorityCommandCenterProps> = ({
         {/* Authority Login Quick Access */}
         {!isAuthority ? (
           <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 px-4 py-2 rounded-2xl text-xs">
-            <span className="font-bold text-amber-900">Officer Login: <strong className="font-mono">admin@nira.in</strong></span>
+            <span className="font-bold text-amber-900">Government Portal: <strong className="font-mono">admin@nira.in</strong></span>
             <button
-              onClick={() => signInAuthority('admin@nira.in', 'nira@123')}
-              className="px-3 py-1 rounded-xl bg-[#FFC800] hover:bg-amber-400 text-slate-950 font-black text-xs shadow-sm transition-all"
+              onClick={() => onOpenAuthModal ? onOpenAuthModal() : signInAuthority('admin@nira.in', 'nira@123')}
+              className="px-3.5 py-1.5 rounded-xl bg-[#FFC800] hover:bg-amber-400 text-slate-950 font-black text-xs shadow-sm transition-all flex items-center gap-1.5"
             >
-              1-Tap Authority Login
+              <Building2 className="w-3.5 h-3.5" />
+              <span>Officer Log In</span>
             </button>
           </div>
         ) : (
           <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-2xl text-xs font-bold text-emerald-800">
             <CheckCircle className="w-4 h-4 text-[#10B981]" />
-            <span>Logged in as Government Authority ({user?.email})</span>
+            <span>Logged in as Municipal Authority ({user?.email})</span>
           </div>
         )}
 
