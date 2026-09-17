@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
+@import 'leaflet/dist/leaflet.css';
 
 @tailwind base;
 @tailwind components;
@@ -89,4 +90,71 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #94A3B8;
+}
+
+/* =========================================================
+   LEAFLET LIVE MAP CUSTOM POLISH & ANIMATIONS
+   ========================================================= */
+
+/* User Live Location Marker Pulse Animation */
+@keyframes user-location-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(37, 107, 245, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 16px rgba(37, 107, 245, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(37, 107, 245, 0);
+  }
+}
+
+.user-location-pulse-ring {
+  border-radius: 9999px;
+  animation: user-location-pulse 2s infinite cubic-bezier(0.45, 0, 0.2, 1);
+}
+
+/* Selected Location Marker Drop Bounce */
+@keyframes marker-drop-bounce {
+  0% {
+    transform: translateY(-12px);
+    opacity: 0.8;
+  }
+  60% {
+    transform: translateY(2px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.selected-location-marker {
+  animation: marker-drop-bounce 0.3s ease-out forwards;
+}
+
+/* Leaflet Popup Styling Override */
+.leaflet-popup-content-wrapper {
+  padding: 0 !important;
+  border-radius: 20px !important;
+  box-shadow: 0 16px 32px -8px rgba(15, 23, 42, 0.25), 0 4px 12px -2px rgba(15, 23, 42, 0.15) !important;
+  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+  overflow: hidden !important;
+  font-family: var(--font-outfit), sans-serif !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  line-height: normal !important;
+}
+
+.leaflet-popup-tip {
+  background: white !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.leaflet-container {
+  font-family: var(--font-outfit), sans-serif !important;
+  z-index: 10 !important;
 }

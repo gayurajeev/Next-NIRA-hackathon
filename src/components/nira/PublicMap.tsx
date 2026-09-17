@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { DrainageReport, HotspotCluster } from '@/lib/niraTypes';
 import { Map, MapPin, CheckCircle, Flame, Info } from 'lucide-react';
+import { LiveMap } from '@/components/LiveMap';
 
 interface PublicMapProps {
   reports: DrainageReport[];
@@ -57,80 +58,28 @@ export const PublicMap: React.FC<PublicMapProps> = ({ reports, hotspots }) => {
           </div>
         </div>
 
-        {/* MAP SIMULATOR BOX (Light Blue Grid Graph Paper Theme) */}
-        <div className="relative w-full h-[450px] rounded-2xl bg-[#EBF3FE] border-2 border-blue-200 overflow-hidden shadow-inner">
-          
-          {/* Subtle graph lines pattern */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#C7DCFE_1px,transparent_1px),linear-gradient(to_bottom,#C7DCFE_1px,transparent_1px)] bg-[size:2rem_2rem] opacity-70"></div>
-
-          {/* Kochi Canal Arterial Water Line Representation */}
-          <div className="absolute inset-y-12 left-1/3 w-2 bg-[#256BF5]/25 rounded-full blur-[1px]"></div>
-          <div className="absolute inset-x-12 top-1/2 h-2 bg-[#256BF5]/20 rounded-full blur-[1px]"></div>
-
-          {/* Hotspot Cluster Rings */}
-          {(mapFilter === 'ALL' || mapFilter === 'HOTSPOTS') &&
-            hotspots.map((hs, idx) => {
-              const posX = 30 + (idx * 25);
-              const posY = 35 + (idx * 18);
-
-              return (
-                <div
-                  key={hs.id}
-                  onClick={() => setSelectedPin(hs)}
-                  style={{ left: `${posX}%`, top: `${posY}%` }}
-                  className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer group z-10"
-                >
-                  <div className="absolute -inset-4 rounded-full bg-red-400/30 animate-ping"></div>
-                  <div className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#EF4444] text-white shadow-lg text-xs font-black">
-                    <Flame className="w-4 h-4 text-[#FFC800] animate-pulse" />
-                    <span>Hotspot ({hs.report_count})</span>
-                  </div>
-                </div>
-              );
-            })}
-
-          {/* Drainage Report Markers */}
-          {mapFilter !== 'HOTSPOTS' &&
-            displayReports.map((rep, idx) => {
-              const isResolved = rep.status === 'RESOLVED';
-              const posX = 20 + ((idx * 17) % 65);
-              const posY = 25 + ((idx * 22) % 60);
-
-              return (
-                <div
-                  key={rep.id}
-                  onClick={() => setSelectedPin(rep)}
-                  style={{ left: `${posX}%`, top: `${posY}%` }}
-                  className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer group z-20"
-                >
-                  <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black shadow-md transition-transform hover:scale-110 ${
-                    isResolved
-                      ? 'bg-[#10B981] text-white'
-                      : rep.status === 'ESCALATED'
-                      ? 'bg-[#EF4444] text-white'
-                      : 'bg-[#FFC800] text-slate-900 border border-slate-900/10'
-                  }`}>
-                    {isResolved ? (
-                      <CheckCircle className="w-3.5 h-3.5 text-white" />
-                    ) : (
-                      <MapPin className="w-3.5 h-3.5" />
-                    )}
-                    <span>{rep.ticket_code}</span>
-                  </div>
-                </div>
-              );
-            })}
+        {/* REAL INTERACTIVE LIVEMAP (Satellite, Street, Live Geolocation, Supabase Markers) */}
+        <div className="relative w-full">
+          <LiveMap
+            mode="view"
+            height="500px"
+            reports={displayReports}
+            hotspots={mapFilter === 'ACTIVE' || mapFilter === 'RESOLVED' ? [] : hotspots}
+            showReports={mapFilter !== 'HOTSPOTS'}
+            showHotspots={mapFilter === 'ALL' || mapFilter === 'HOTSPOTS'}
+            onReportClick={rep => setSelectedPin(rep)}
+          />
 
           {/* Map Legend */}
-          <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between text-[11px] font-bold text-slate-700 bg-white/95 backdrop-blur-md p-3 rounded-2xl border border-blue-200 shadow-sm">
-            <div className="flex items-center gap-4">
+          <div className="mt-3 flex flex-wrap items-center justify-between text-[11px] font-bold text-slate-700 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm gap-2">
+            <div className="flex flex-wrap items-center gap-4">
               <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-[#10B981]"></span> Resolved Drain</span>
               <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-[#FFC800]"></span> Active Blockage</span>
-              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-[#EF4444]"></span> Hotspot Cluster</span>
+              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-[#256BF5]"></span> High Priority</span>
+              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-[#EF4444]"></span> Critical / Hotspot</span>
             </div>
-            <span className="font-mono text-slate-500">Kochi Municipal GIS</span>
+            <span className="font-mono text-slate-500">Kochi Municipal GIS • Esri Satellite</span>
           </div>
-
         </div>
 
       </div>

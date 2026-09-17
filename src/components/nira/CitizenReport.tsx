@@ -4,7 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { DrainageReport, DrainageIssueType, SeverityLevel } from '@/lib/niraTypes';
 import { calculatePriorityScore, niraService } from '@/lib/niraService';
 import { useAuth } from '@/lib/authContext';
-import { Camera, MapPin, AlertTriangle, Sparkles, Send, CheckCircle2, UploadCloud, Cpu, Image as ImageIcon } from 'lucide-react';
+import { LiveMap } from '@/components/LiveMap';
+import { Camera, MapPin, AlertTriangle, Sparkles, Send, CheckCircle2, UploadCloud, Cpu, Image as ImageIcon, Crosshair } from 'lucide-react';
 
 interface CitizenReportProps {
   onReportCreated: (report: DrainageReport) => void;
@@ -48,6 +49,11 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
   const [description, setDescription] = useState<string>('Storm drain heavily blocked with plastic waste and mud. Water overflowing onto pedestrian walkway.');
   const [reporterName, setReporterName] = useState<string>(user?.name || '');
   const [reporterPhone, setReporterPhone] = useState<string>('');
+  const [selectedCoords, setSelectedCoords] = useState<{ lat: number; lng: number }>({
+    lat: 9.9674,
+    lng: 76.2998,
+  });
+  const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -111,6 +117,8 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
         description: description,
         reporter_name: reporterName,
         reporter_phone: reporterPhone,
+        lat: selectedCoords.lat,
+        lng: selectedCoords.lng,
       });
 
       try {
@@ -312,6 +320,47 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                   <option value="LOW">Low</option>
                 </select>
               </div>
+            </div>
+
+            {/* INTERACTIVE SATELLITE MAP LOCATION PICKER */}
+            <div className="space-y-2 pt-1">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-black text-slate-800 flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-[#EF4444]" /> Pin Exact Location on Satellite Map
+                </label>
+                <span className="text-[10px] font-mono font-black text-[#256BF5] bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-lg">
+                  {selectedCoords.lat.toFixed(5)}° N, {selectedCoords.lng.toFixed(5)}° E
+                </span>
+              </div>
+
+              <p className="text-[11px] text-slate-500 font-medium">
+                Continuous live browser GPS. Click anywhere on the satellite view to pinpoint the blocked storm drain.
+              </p>
+
+              {/* REUSABLE LIVEMAP IN PICKER MODE */}
+              <LiveMap
+                mode="picker"
+                height="280px"
+                selectedLocation={selectedCoords}
+                onLocationSelect={(lat, lng, acc) => {
+                  setSelectedCoords({ lat, lng });
+                  if (acc) setLocationAccuracy(acc);
+                }}
+                showReports={false}
+                showHotspots={false}
+              />
+
+              {locationAccuracy !== null && (
+                <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 px-1 pt-0.5">
+                  <span className="text-emerald-700 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    GPS Accuracy: ±{Math.round(locationAccuracy)} meters
+                  </span>
+                  {locationAccuracy > 50 && (
+                    <span className="text-amber-600">GPS accuracy is low. You can adjust the pin manually.</span>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Landmark */}
