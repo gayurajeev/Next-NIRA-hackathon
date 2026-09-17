@@ -221,13 +221,13 @@ export const Header: React.FC<HeaderProps> = ({ openIncidentsCount: propIncident
                   </button>
                 </div>
               ) : (
-                <button
-                  onClick={() => handleOpenAuth('CITIZEN')}
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-[#256BF5] hover:bg-blue-700 text-white font-black text-xs shadow-md shadow-blue-500/20 hover:scale-105 active:scale-95 transition-all"
+                <Link
+                  href="/#public-map"
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-[#EDF4FF] border border-blue-200 text-[#256BF5] font-black text-xs hover:bg-blue-100 hover:scale-105 active:scale-95 transition-all"
                 >
-                  <LogIn className="w-3.5 h-3.5" />
-                  <span>Log In</span>
-                </button>
+                  <Map className="w-3.5 h-3.5" />
+                  <span>View Public Map</span>
+                </Link>
               )}
 
               {/* Primary Action Button */}
