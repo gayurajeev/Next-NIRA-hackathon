@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { DrainageReport, HotspotCluster } from '@/lib/niraTypes';
 import { Map, MapPin, CheckCircle, Flame, Info } from 'lucide-react';
 import { LiveMap } from '@/components/LiveMap';
+import { NIRAPriorityBadge } from './NIRAPriorityBadge';
 
 interface PublicMapProps {
   reports: DrainageReport[];
@@ -146,9 +147,12 @@ export const PublicMap: React.FC<PublicMapProps> = ({ reports, hotspots }) => {
               </div>
 
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-slate-500 font-bold">Priority Score:</span>
-                  <strong className="text-[#256BF5] font-black">{selectedPin.priority_score}/100</strong>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <span className="text-slate-500 font-bold block">NIRA Priority Score:</span>
+                    <span className="text-[10px] text-slate-400 font-medium">Prototype operational prioritization</span>
+                  </div>
+                  <NIRAPriorityBadge score={selectedPin.priority_score} size="sm" />
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500 font-bold">Authority:</span>

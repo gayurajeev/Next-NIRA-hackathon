@@ -3,6 +3,15 @@ import { INITIAL_NIRA_REPORTS, INITIAL_HOTSPOT_CLUSTERS, KOCHI_WARDS } from './n
 import { DrainageReport, HotspotCluster, WardInfo, ReportStatus, SeverityLevel, DrainageIssueType } from './niraTypes';
 
 import { kmcWardService, WardLookupResult } from './kmcWardService';
+import {
+  calculateNiraPriorityScore,
+  PriorityScoreResult as NiraPriorityResult,
+  PriorityTier,
+  PriorityFactorBreakdown,
+  PriorityScoreInput,
+} from './priorityEngine';
+
+export * from './priorityEngine';
 
 export interface PriorityBreakdown {
   baseScore: number;
@@ -11,12 +20,7 @@ export interface PriorityBreakdown {
   corridorBonus: number;
 }
 
-export interface PriorityScoreResult {
-  score: number;
-  breakdown: PriorityBreakdown;
-  slaHours: number;
-  explanation: string;
-}
+export type PriorityScoreResult = NiraPriorityResult;
 
 export interface WardIdentificationOutput {
   ward: string;
@@ -60,65 +64,42 @@ export function identifyKochiWard(lat: number, lng: number): WardIdentificationO
 }
 
 /**
- * AI Priority & Impact Score Algorithm (0 to 100) with detailed explanation & SLA
+ * NIRA Priority Score — Prototype Operational Prioritization (0 to 100)
+ * Uses deterministic civic infrastructure factors with transparent weights.
  */
 export function calculatePriorityScore(
   issueType: DrainageIssueType,
   severity: SeverityLevel,
-  isMainCorridor: boolean = true
+  isMainCorridor: boolean = true,
+  options?: {
+    standingWater?: 'Detected' | 'Severe Pooling' | 'Submerged Channel' | 'Dry/Low' | boolean;
+    ward?: string;
+    nearbyUnresolvedCount?: number;
+    repeatedReportsCount?: number;
+    lat?: number;
+    lng?: number;
+  }
 ): PriorityScoreResult {
-  const baseScore = 20;
-  let issueWeight = 15;
-  let severityMultiplier = 10;
-  const corridorBonus = isMainCorridor ? 15 : 5;
-
-  switch (issueType) {
-    case 'BLOCKED_STORM_DRAIN': issueWeight = 30; break;
-    case 'SEWAGE_OVERFLOW': issueWeight = 28; break;
-    case 'BROKEN_CULVERT': issueWeight = 25; break;
-    case 'SILT_ACCUMULATION': issueWeight = 18; break;
-    case 'GARBAGE_DUMPING': issueWeight = 12; break;
-  }
-
-  let slaHours = 12;
-  switch (severity) {
-    case 'CRITICAL':
-      severityMultiplier = 35;
-      slaHours = 3;
-      break;
-    case 'HIGH':
-      severityMultiplier = 25;
-      slaHours = 6;
-      break;
-    case 'MEDIUM':
-      severityMultiplier = 15;
-      slaHours = 12;
-      break;
-    case 'LOW':
-      severityMultiplier = 8;
-      slaHours = 24;
-      break;
-  }
-
-  const rawScore = baseScore + issueWeight + severityMultiplier + corridorBonus;
-  const finalScore = Math.min(99, Math.max(25, rawScore));
-
-  const explanation = severity === 'CRITICAL' || finalScore >= 80
-    ? `Urgent Hazard: Severe ${issueType.replace(/_/g, ' ').toLowerCase()} on major arterial corridor with high flood risk. Mandates rapid crew dispatch within ${slaHours}h SLA.`
-    : finalScore >= 60
-    ? `Moderate Hazard: Significant ${issueType.replace(/_/g, ' ').toLowerCase()} restricting urban drainage capacity. Standard ${slaHours}h SLA response.`
-    : `Routine Issue: Managed maintenance ticket for ${issueType.replace(/_/g, ' ').toLowerCase()}. Scheduled for clearance within ${slaHours}h SLA.`;
+  const result = calculateNiraPriorityScore({
+    issueType,
+    severity,
+    isMainCorridor,
+    standingWater: options?.standingWater ?? 'Detected',
+    ward: options?.ward ?? 'Vyttila',
+    nearbyUnresolvedCount: options?.nearbyUnresolvedCount,
+    repeatedReportsCount: options?.repeatedReportsCount,
+    lat: options?.lat,
+    lng: options?.lng,
+  });
 
   return {
-    score: finalScore,
-    breakdown: {
-      baseScore,
-      issueWeight,
-      severityMultiplier,
-      corridorBonus,
-    },
-    slaHours,
-    explanation,
+    score: result.score,
+    tier: result.tier,
+    slaHours: result.slaHours,
+    factors: result.factors,
+    explanation: result.explanation,
+    prototypeDisclaimer: result.prototypeDisclaimer,
+    breakdown: result.breakdown,
   };
 }
 
@@ -205,7 +186,12 @@ export const niraService = {
     const priorityResult = calculatePriorityScore(
       report.issue_type || 'BLOCKED_STORM_DRAIN',
       report.severity || 'HIGH',
-      true
+      true,
+      {
+        ward: wardName,
+        lat: report.lat || 9.9674,
+        lng: report.lng || 76.2998,
+      }
     );
 
     const newReport: DrainageReport = {
@@ -219,9 +205,9 @@ export const niraService = {
       authority: report.authority || identified.authority,
       selection_method: report.selection_method || 'GPS_AUTO',
       detection_method: identified.detectionMethod,
-      priority_score: priorityResult.score,
-      priority_explanation: priorityResult.explanation,
-      sla_hours: priorityResult.slaHours,
+      priority_score: report.priority_score !== undefined ? report.priority_score : priorityResult.score,
+      priority_explanation: report.priority_explanation || priorityResult.explanation,
+      sla_hours: report.sla_hours || priorityResult.slaHours,
       status: 'OPEN',
       lat: report.lat || 9.9674,
       lng: report.lng || 76.2998,

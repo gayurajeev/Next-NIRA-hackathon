@@ -3,6 +3,7 @@
 import React, { useState, useRef } from 'react';
 import { DrainageReport, HotspotCluster, ReportStatus } from '@/lib/niraTypes';
 import { niraService } from '@/lib/niraService';
+import { NIRAPriorityBadge } from './NIRAPriorityBadge';
 import { useAuth } from '@/lib/authContext';
 import {
   ShieldAlert,
@@ -337,7 +338,7 @@ export const AuthorityCommandCenter: React.FC<AuthorityCommandCenterProps> = ({
               <tr>
                 <th className="px-4 py-3">Ticket / Issue</th>
                 <th className="px-4 py-3">Ward & Landmark</th>
-                <th className="px-4 py-3">Priority Score</th>
+                <th className="px-4 py-3">NIRA Priority Score</th>
                 <th className="px-4 py-3">SLA Status</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Assigned Crew</th>
@@ -359,11 +360,7 @@ export const AuthorityCommandCenter: React.FC<AuthorityCommandCenterProps> = ({
                       <div className="text-[11px] text-slate-500 truncate max-w-[180px]">{rep.landmark}</div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`font-mono font-black text-sm ${
-                        rep.priority_score >= 80 ? 'text-[#EF4444]' : rep.priority_score >= 60 ? 'text-amber-600' : 'text-[#256BF5]'
-                      }`}>
-                        {rep.priority_score}/100
-                      </span>
+                      <NIRAPriorityBadge score={rep.priority_score} size="sm" />
                     </td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black ${
@@ -454,6 +451,14 @@ export const AuthorityCommandCenter: React.FC<AuthorityCommandCenterProps> = ({
                 <h3 className="text-base font-black text-slate-900">Dispatch Rapid Action Crew</h3>
                 <p className="text-xs text-slate-500 font-bold">{crewModalReport.ticket_code} • {crewModalReport.ward} (Ward #{crewModalReport.ward_number}) • {crewModalReport.authority || 'KMC'}</p>
               </div>
+            </div>
+
+            <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
+              <div>
+                <span className="font-bold text-slate-700 block">NIRA Priority Score</span>
+                <span className="text-[10px] text-slate-400 font-bold">Prototype operational prioritization</span>
+              </div>
+              <NIRAPriorityBadge score={crewModalReport.priority_score} size="sm" />
             </div>
 
             <div className="space-y-3">

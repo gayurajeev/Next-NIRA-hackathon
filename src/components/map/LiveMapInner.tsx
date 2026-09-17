@@ -587,7 +587,9 @@ export default function LiveMapInner({
                   </div>
 
                   <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[10px]">
-                    <span className="font-bold text-slate-500">Impact Score: <strong className="text-[#256BF5]">{rep.priority_score}/100</strong></span>
+                    <span className="font-bold text-slate-500">
+                      NIRA Priority: <strong className={rep.priority_score >= 85 ? 'text-[#EF4444]' : rep.priority_score >= 70 ? 'text-amber-700' : 'text-[#256BF5]'}>{rep.priority_score}/100</strong>
+                    </span>
                     <span className="font-mono text-slate-400">{new Date(rep.created_at).toLocaleDateString()}</span>
                   </div>
                 </div>

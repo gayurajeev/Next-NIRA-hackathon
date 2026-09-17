@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { DrainageReport } from '@/lib/niraTypes';
+import { NIRAPriorityBadge } from './NIRAPriorityBadge';
 import { ClipboardList, User, MapPin, CheckCircle2, Truck, ShieldCheck, Clock, FileText, Sparkles } from 'lucide-react';
 
 interface MyReportsProps {
@@ -101,10 +102,10 @@ export const MyReports: React.FC<MyReportsProps> = ({ reports }) => {
                 </div>
 
                 <div className="text-right space-y-1">
-                  <div className="text-xs font-bold text-slate-500">Impact Score</div>
-                  <div className="text-2xl font-black text-[#256BF5] font-mono">{report.priority_score}<span className="text-xs text-slate-400">/100</span></div>
+                  <div className="text-[10px] font-bold text-slate-400">NIRA Priority Score</div>
+                  <NIRAPriorityBadge score={report.priority_score} size="md" />
                   {report.sla_hours && (
-                    <div className="text-[10px] font-bold text-slate-400">SLA: {report.sla_hours}h Target</div>
+                    <div className="text-[10px] font-bold text-slate-500">Target SLA: {report.sla_hours}h</div>
                   )}
                 </div>
               </div>
@@ -121,7 +122,7 @@ export const MyReports: React.FC<MyReportsProps> = ({ reports }) => {
                     <div className="pt-2 border-t border-slate-200/80 flex items-start gap-1.5 text-slate-600">
                       <Sparkles className="w-3.5 h-3.5 text-[#256BF5] flex-shrink-0 mt-0.5" />
                       <p className="text-[11px] font-medium leading-relaxed">
-                        <strong className="text-slate-900 font-bold">AI Triage Reason:</strong> {report.priority_explanation}
+                        <strong className="text-slate-900 font-bold">Operational Prioritization Logic:</strong> {report.priority_explanation}
                       </p>
                     </div>
                   )}

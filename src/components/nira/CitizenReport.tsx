@@ -6,6 +6,8 @@ import { calculatePriorityScore, niraService } from '@/lib/niraService';
 import { kmcWardService, WardLookupResult } from '@/lib/kmcWardService';
 import { drainageClassifierService, DrainageClassificationResult } from '@/lib/drainageClassifierService';
 import { AIAnalysisCard } from './AIAnalysisCard';
+import { NIRAPriorityCard } from './NIRAPriorityCard';
+import { NIRAPriorityBadge } from './NIRAPriorityBadge';
 import { useAuth } from '@/lib/authContext';
 import { LiveMap } from '@/components/LiveMap';
 import { Camera, MapPin, AlertTriangle, Sparkles, Send, CheckCircle2, UploadCloud, Cpu, Image as ImageIcon, Crosshair, Clock, ShieldCheck, Loader2, Building2 } from 'lucide-react';
@@ -110,8 +112,13 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
     }
   };
 
-  // Live priority score and mathematical breakdown
-  const priorityData = calculatePriorityScore(issueType, severity, true);
+  // Live deterministic NIRA Priority Score and transparent breakdown
+  const priorityData = calculatePriorityScore(issueType, severity, true, {
+    standingWater: aiClassification?.standingWater || 'Detected',
+    ward: ward,
+    lat: selectedCoords.lat,
+    lng: selectedCoords.lng,
+  });
 
   // Reusable ward boundary lookup handler invoked on GPS or map click
   const handleLocationUpdate = async (lat: number, lng: number, acc?: number, isManual?: boolean) => {
@@ -329,43 +336,12 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
               }}
             />
 
-            {/* AI PRIORITY IMPACT SCORE GAUGE & TRANSPARENT BREAKDOWN */}
-            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
-              <div className="flex items-center justify-between text-xs font-black">
-                <span className="text-slate-800 flex items-center gap-1.5">
-                  <AlertTriangle className="w-4 h-4 text-[#FFC800]" /> Automated Impact Score
-                </span>
-                <span className="text-2xl font-black text-[#256BF5] font-mono">{priorityData.score}<span className="text-xs text-slate-400">/100</span></span>
-              </div>
-
-              <div className="w-full h-3.5 rounded-full bg-slate-100 overflow-hidden p-0.5 border border-slate-200">
-                <div
-                  style={{ width: `${priorityData.score}%` }}
-                  className="h-full rounded-full bg-[#FFC800] transition-all duration-500"
-                ></div>
-              </div>
-
-              {/* Formula Breakdown Pills */}
-              <div className="grid grid-cols-2 gap-2 text-[10px] font-bold text-slate-600 bg-slate-50 p-2.5 rounded-2xl border border-slate-200">
-                <div>Base Risk: <strong className="text-slate-900">+{priorityData.breakdown.baseScore}</strong></div>
-                <div>Issue Type: <strong className="text-[#256BF5]">+{priorityData.breakdown.issueWeight}</strong></div>
-                <div>Severity: <strong className="text-[#EF4444]">+{priorityData.breakdown.severityMultiplier}</strong></div>
-                <div>Transit Artery: <strong className="text-emerald-600">+{priorityData.breakdown.corridorBonus}</strong></div>
-              </div>
-
-              {/* AI Triage Reasoning */}
-              <div className="p-3 rounded-2xl bg-blue-50/80 border border-blue-100 text-xs space-y-1">
-                <div className="flex items-center justify-between font-black text-[11px] text-[#256BF5]">
-                  <span>AI Triage Reasoning</span>
-                  <span className="bg-[#FFC800] text-slate-950 px-2 py-0.5 rounded-full text-[10px] font-mono">
-                    {priorityData.slaHours}h SLA
-                  </span>
-                </div>
-                <p className="text-[11px] leading-relaxed text-slate-600 font-medium">
-                  {priorityData.explanation}
-                </p>
-              </div>
-            </div>
+            {/* DETERMINISTIC NIRA PRIORITY SCORE CARD WITH EXPANDABLE BREAKDOWN */}
+            <NIRAPriorityCard
+              priorityData={priorityData}
+              showExpandableBreakdown={true}
+              defaultExpanded={true}
+            />
           </div>
 
           {/* RIGHT COLUMN: REPORT DETAILS & FORM */}
@@ -637,10 +613,19 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
               <span className="text-slate-600 font-sans font-bold">Assigned Officer</span>
               <span className="text-slate-900 font-sans font-bold">{submittedReport.assigned_officer}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-slate-600 font-sans font-bold">Priority Score</span>
-              <strong className="text-[#FFC800] bg-slate-900 px-2 py-0.5 rounded font-black">{submittedReport.priority_score}/100</strong>
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-slate-600 font-sans font-bold block">NIRA Priority Score</span>
+                <span className="text-[10px] text-slate-400 font-sans font-bold">Prototype operational prioritization</span>
+              </div>
+              <NIRAPriorityBadge score={submittedReport.priority_score} size="md" />
             </div>
+            {submittedReport.priority_explanation && (
+              <div className="pt-2 border-t border-blue-200/80 text-[11px] font-sans text-slate-600 font-medium leading-relaxed">
+                <strong className="text-slate-800 font-bold block mb-0.5">Operational Dispatch Logic:</strong>
+                {submittedReport.priority_explanation}
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-4 justify-center">
