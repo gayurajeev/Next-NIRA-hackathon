@@ -28,7 +28,17 @@ import {
   Activity,
   CheckCircle2,
   FileCheck,
+  Timer,
+  FastForward,
+  RotateCcw,
+  Zap,
 } from 'lucide-react';
+import {
+  evaluateSla,
+  escalateReportOnBreach,
+  getSlaLimitHours,
+  formatDurationHoursMinutes,
+} from '@/lib/slaEngine';
 
 interface AuthorityCommandCenterProps {
   reports: DrainageReport[];
@@ -101,30 +111,65 @@ export const AuthorityCommandCenter: React.FC<AuthorityCommandCenterProps> = ({
 
   const isAuthority = user?.role === 'GOVERNMENT';
 
-  // SLA Calculation Helper
-  const getSlaInfo = (report: DrainageReport) => {
-    const elapsedHours = Math.max(0, (Date.now() - new Date(report.created_at).getTime()) / (1000 * 60 * 60));
-    const limit = report.sla_hours || (report.severity === 'CRITICAL' ? 3 : report.severity === 'HIGH' ? 6 : 12);
-    const remaining = limit - elapsedHours;
-    const isBreached = remaining < 0 && report.status !== 'RESOLVED';
-    const isApproaching = remaining <= 2 && remaining > 0 && report.status !== 'RESOLVED';
+  // Demo Clock Offset (manipulates simulated time rather than user system clock)
+  const [demoClockOffsetHours, setDemoClockOffsetHours] = useState<number>(0);
+  const simulatedNowMs = Date.now() + demoClockOffsetHours * 3600 * 1000;
 
+  // SLA Calculation Helper using robust SLA Engine
+  const getSlaInfo = (report: DrainageReport) => {
+    const evaluation = evaluateSla(report, simulatedNowMs);
+    const overdueHours = Math.max(0, evaluation.elapsedHours - evaluation.slaLimitHours);
     return {
-      limit,
-      elapsedHours: Math.round(elapsedHours * 10) / 10,
-      remaining: Math.round(remaining * 10) / 10,
-      isBreached,
-      isApproaching,
-      remainingDisplay: isBreached
-        ? `Breached (+${Math.round(Math.abs(remaining))}h)`
-        : `${Math.round(remaining)}h left`,
+      limit: evaluation.slaLimitHours,
+      slaLimitHours: evaluation.slaLimitHours,
+      elapsedHours: evaluation.elapsedHours,
+      remaining: evaluation.remainingHours,
+      remainingHours: evaluation.remainingHours,
+      elapsedFormatted: evaluation.elapsedFormatted,
+      remainingFormatted: evaluation.remainingFormatted,
+      isBreached: evaluation.isBreached,
+      isApproaching: evaluation.isApproaching,
+      slaState: evaluation.slaState,
+      currentAuthorityLevel: evaluation.currentAuthorityLevel,
+      nextAuthorityLevel: evaluation.nextAuthorityLevel,
+      remainingDisplay: evaluation.isBreached
+        ? `Breached (+${formatDurationHoursMinutes(overdueHours)})`
+        : `${evaluation.remainingFormatted} left`,
     };
   };
 
-  // Relative Age Helper
+  // Trigger Demo SLA Breach Action
+  const handleTriggerSlaBreach = () => {
+    const activeReports = reports.filter(r => r.status !== 'RESOLVED');
+    if (activeReports.length === 0) return;
+
+    // Pick critical/high report if available, else first active report
+    const target =
+      activeReports.find(r => (r.severity === 'CRITICAL' || r.severity === 'HIGH') && r.status !== 'ESCALATED') ||
+      activeReports.find(r => r.status !== 'ESCALATED') ||
+      activeReports[0];
+
+    const targetSla = getSlaLimitHours(target.severity);
+    const createdAtMs = new Date(target.created_at).getTime();
+    const currentElapsed = (simulatedNowMs - createdAtMs) / (3600 * 1000);
+    const advanceNeeded = Math.max(demoClockOffsetHours + 4, Math.ceil(targetSla - currentElapsed + 1.2) + demoClockOffsetHours);
+
+    setDemoClockOffsetHours(advanceNeeded);
+    const newSimulatedTimeMs = Date.now() + advanceNeeded * 3600 * 1000;
+
+    const escalatedTicket = escalateReportOnBreach(target, {
+      simulatedCurrentTimeMs: newSimulatedTimeMs,
+      customReason: `SLA BREACHED: Ticket elapsed ${formatDurationHoursMinutes(targetSla + 1.2)} (allowable SLA: ${targetSla}h). Escalated from Ward Response Team to Supervisory Officer (Assistant Executive Engineer).`,
+    });
+
+    onReportUpdated(escalatedTicket);
+    setSelectedTicket(escalatedTicket);
+  };
+
+  // Relative Age Helper with simulated clock support
   const formatAge = (dateStr: string): string => {
     try {
-      const diffMs = Date.now() - new Date(dateStr).getTime();
+      const diffMs = simulatedNowMs - new Date(dateStr).getTime();
       const mins = Math.floor(diffMs / (1000 * 60));
       if (mins < 60) return `${Math.max(1, mins)}m ago`;
       const hours = Math.floor(mins / 60);
@@ -389,6 +434,177 @@ export const AuthorityCommandCenter: React.FC<AuthorityCommandCenterProps> = ({
           )}
         </div>
       </div>
+
+      {/* ========================================================================= */}
+      {/* 1B. SLA & ESCALATION DEMO CONTROLS (AUTHENTICATED AUTHORITY DASHBOARD ONLY) */}
+      {/* ========================================================================= */}
+      {isAuthority && (
+        <div className="p-5 rounded-3xl bg-amber-50/90 border-2 border-amber-300 space-y-3 shadow-xs animate-fadeIn">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-2xl bg-[#FFC800] text-slate-950 flex items-center justify-center font-black shadow-xs">
+                <Timer className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-slate-900 tracking-tight">
+                  SLA Engine Demo Controls (Simulation Sandbox)
+                </h4>
+                <p className="text-xs text-slate-600 font-medium">
+                  Test time-based SLA thresholds (High/Crit: 4h, Med: 8h, Low: 24h) and trigger automated supervisory escalations.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono font-black px-3 py-1 rounded-xl bg-white border border-amber-200 text-amber-900 shadow-2xs">
+                Simulated Offset: +{demoClockOffsetHours}h ({new Date(simulatedNowMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})
+              </span>
+            </div>
+          </div>
+
+          {/* Action Buttons: +1h, +4h, +8h, Trigger SLA breach */}
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => setDemoClockOffsetHours(prev => prev + 1)}
+              className="px-3 py-1.5 rounded-xl bg-white hover:bg-amber-100 border border-amber-300 text-slate-900 text-xs font-black shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
+            >
+              <FastForward className="w-3.5 h-3.5 text-amber-600" />
+              <span>+1 hour</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setDemoClockOffsetHours(prev => prev + 4)}
+              className="px-3 py-1.5 rounded-xl bg-white hover:bg-amber-100 border border-amber-300 text-slate-900 text-xs font-black shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
+            >
+              <FastForward className="w-3.5 h-3.5 text-amber-600" />
+              <span>+4 hours</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setDemoClockOffsetHours(prev => prev + 8)}
+              className="px-3 py-1.5 rounded-xl bg-white hover:bg-amber-100 border border-amber-300 text-slate-900 text-xs font-black shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
+            >
+              <FastForward className="w-3.5 h-3.5 text-amber-600" />
+              <span>+8 hours</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleTriggerSlaBreach}
+              className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-black shadow-md shadow-red-500/20 transition-all flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
+            >
+              <Zap className="w-3.5 h-3.5 text-[#FFC800]" />
+              <span>Trigger SLA breach</span>
+            </button>
+
+            {demoClockOffsetHours > 0 && (
+              <button
+                type="button"
+                onClick={() => setDemoClockOffsetHours(0)}
+                className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black transition-all flex items-center gap-1 cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset (0h)</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 1C. SLA BREACHED WARNING CALLOUT (VISIBLE WARNING IN COMMAND CENTER)      */}
+      {/* ========================================================================= */}
+      {breachedReports.length > 0 && (
+        <div className="p-5 sm:p-6 rounded-3xl bg-red-50 border-2 border-red-300 text-red-950 space-y-4 shadow-sm animate-fadeIn">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-2xl bg-[#EF4444] text-white flex items-center justify-center font-black shadow-md shadow-red-500/20">
+                <AlertOctagon className="w-5 h-5 animate-pulse" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-black text-red-950 uppercase tracking-tight">
+                    SLA BREACHED — SUPERVISORY ESCALATION REQUIRED
+                  </h3>
+                  <span className="px-2 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-black uppercase">
+                    Level 2 Intercept
+                  </span>
+                </div>
+                <p className="text-xs text-red-800 font-medium mt-0.5">
+                  The following active ticket(s) have exceeded allowable municipal SLA response windows without verified resolution.
+                </p>
+              </div>
+            </div>
+
+            <span className="text-xs font-mono font-black text-red-700 bg-red-100 px-3 py-1 rounded-xl border border-red-200">
+              {breachedReports.length} Breached / Escalated
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+            {breachedReports.slice(0, 2).map(rep => {
+              const sla = getSlaInfo(rep);
+              return (
+                <div
+                  key={rep.id}
+                  className="p-4 rounded-2xl bg-white border-2 border-red-200 shadow-xs space-y-3"
+                >
+                  <div className="flex justify-between items-center border-b border-red-100 pb-2">
+                    <span className="font-mono font-black text-[#256BF5] text-sm">{rep.ticket_code}</span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 font-black text-[10px] uppercase animate-pulse">
+                      SLA BREACHED
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-slate-400 font-bold block text-[10px] uppercase">Ward:</span>
+                      <strong className="text-slate-900 font-black">{rep.ward} (Ward #{rep.ward_number})</strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 font-bold block text-[10px] uppercase">Elapsed vs SLA:</span>
+                      <strong className="text-red-600 font-black">
+                        Elapsed: {sla.elapsedFormatted} • SLA: {sla.slaLimitHours}h
+                      </strong>
+                    </div>
+                  </div>
+
+                  {/* Formatted Escalation Levels: Level 1 -> Level 2 */}
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1">
+                    <span className="text-[10px] font-black uppercase text-slate-500 block">
+                      Escalation Routing:
+                    </span>
+                    <div className="flex items-center gap-2 font-bold text-slate-800">
+                      <span className="text-slate-600">Level 1 → Ward Response Team</span>
+                      <ArrowRight className="w-3.5 h-3.5 text-red-600 flex-shrink-0" />
+                      <span className="text-red-700 font-black">Level 2 → Supervisory Officer</span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 italic mt-1">
+                      Assigned: {rep.assigned_officer || 'Assistant Executive Engineer (AEE - Central Operations)'}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTicket(rep)}
+                    className="w-full py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-xs transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                  >
+                    <span>Inspect Diagnostic Panel & Direct Crew</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+
+          <p className="text-[10px] text-slate-500 italic">
+            * Prototype operational SLA model — Demonstrates automated administrative escalation. Does not claim connection to actual statutory KMC proceedings unless formally integrated.
+          </p>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* 2. THE FOUR IMMEDIATE OPERATIONAL QUESTIONS (TRIAGE MATRIX)               */}
@@ -1034,6 +1250,7 @@ export const AuthorityCommandCenter: React.FC<AuthorityCommandCenterProps> = ({
           hotspots={hotspots}
           allReports={reports}
           availableCrews={AVAILABLE_CREWS}
+          simulatedNowMs={simulatedNowMs}
           onClose={() => setSelectedTicket(null)}
           onReportUpdated={updated => {
             onReportUpdated(updated);

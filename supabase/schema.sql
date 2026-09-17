@@ -90,3 +90,47 @@ VALUES
 ('b2222222-2222-2222-2222-222222222222', 'R-TVM-CLT', 'Trivandrum Central', 'Kozhikode Mavoor Stand', 395.0, 540, '[{"name":"Thampanoor","offset":0},{"name":"Kollam","offset":90},{"name":"Alappuzha","offset":180},{"name":"Ernakulam","offset":250},{"name":"Thrissur","offset":360},{"name":"Kozhikode","offset":540}]'::jsonb),
 ('c3333333-3333-3333-3333-333333333333', 'R-KCH-TCR', 'Kochi Airport Transit', 'Thrissur Sakthan Stand', 55.0, 90, '[{"name":"Nedumbassery","offset":0},{"name":"Angamaly","offset":20},{"name":"Chalakudy","offset":45},{"name":"Thrissur","offset":90}]'::jsonb)
 ON CONFLICT (route_code) DO NOTHING;
+
+-- =============================================================================
+-- NIRA DRAINAGE & FLOOD RESILIENCE SCHEMA
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS drainage_reports (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    ticket_code VARCHAR(30) UNIQUE NOT NULL,
+    reporter_name VARCHAR(100) DEFAULT 'Citizen Commuter',
+    reporter_phone VARCHAR(20),
+    landmark VARCHAR(200) NOT NULL,
+    ward VARCHAR(100) NOT NULL,
+    ward_number INTEGER NOT NULL,
+    authority VARCHAR(150) DEFAULT 'Keralam Municipal Corporation',
+    description TEXT NOT NULL,
+    issue_type VARCHAR(50) NOT NULL, -- 'BLOCKED_STORM_DRAIN', 'SILT_MUD_ACCUMULATION', 'BROKEN_CULVERT', 'ILLEGAL_GARBAGE_DUMPING', 'SEWAGE_OVERFLOW'
+    severity VARCHAR(20) DEFAULT 'HIGH', -- 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'
+    status VARCHAR(30) DEFAULT 'OPEN', -- 'OPEN', 'ASSIGNED', 'IN_PROGRESS', 'ESCALATED', 'RESOLVED'
+    priority_score INTEGER DEFAULT 75,
+    priority_explanation TEXT,
+    photo_url TEXT NOT NULL,
+    ai_confidence INTEGER DEFAULT 92,
+    possible_obstruction TEXT,
+    standing_water VARCHAR(30),
+    detection_factors JSONB,
+    lat DOUBLE PRECISION NOT NULL,
+    lng DOUBLE PRECISION NOT NULL,
+    assigned_crew VARCHAR(100),
+    assigned_officer VARCHAR(100),
+    assigned_at TIMESTAMP WITH TIME ZONE,
+    expected_resolution_time TIMESTAMP WITH TIME ZONE,
+    sla_hours INTEGER DEFAULT 4,
+    sla_state VARCHAR(30) DEFAULT 'REPORTED', -- 'REPORTED', 'ASSIGNED', 'IN_PROGRESS', 'SLA_APPROACHING', 'SLA_BREACHED', 'ESCALATED', 'RESOLVED'
+    escalation_level INTEGER DEFAULT 1,
+    escalated_at TIMESTAMP WITH TIME ZONE,
+    escalated_reason TEXT,
+    escalation_history JSONB DEFAULT '[]'::jsonb,
+    resolution_photo_url TEXT,
+    resolution_notes TEXT,
+    resolution_ai_verification JSONB,
+    internal_notes TEXT[],
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    resolved_at TIMESTAMP WITH TIME ZONE
+);

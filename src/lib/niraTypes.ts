@@ -14,6 +14,23 @@ export type ReportStatus =
 
 export type SeverityLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
+export type SlaState =
+  | 'REPORTED'
+  | 'ASSIGNED'
+  | 'IN_PROGRESS'
+  | 'SLA_APPROACHING'
+  | 'SLA_BREACHED'
+  | 'ESCALATED'
+  | 'RESOLVED';
+
+export interface EscalationRecord {
+  level: number;
+  from_authority: string;
+  to_authority: string;
+  timestamp: string;
+  reason: string;
+}
+
 export interface DrainageReport {
   id: string;
   ticket_code: string;
@@ -29,6 +46,7 @@ export interface DrainageReport {
   priority_explanation?: string;
   sla_hours?: number;
   status: ReportStatus;
+  sla_state?: SlaState;
   lat: number;
   lng: number;
   description: string;
@@ -37,7 +55,12 @@ export interface DrainageReport {
   reporter_phone: string;
   created_at: string;
   updated_at: string;
+  assigned_at?: string;
+  expected_resolution_time?: string;
+  escalation_level?: number;
+  escalated_at?: string;
   escalated_reason?: string;
+  escalation_history?: EscalationRecord[];
   assigned_officer?: string;
   assigned_crew?: string;
   resolution_photo_url?: string;

@@ -269,13 +269,13 @@ export function calculateNiraPriorityScore(input: PriorityScoreInput): PriorityS
 
   if (finalScore >= 85) {
     tier = 'CRITICAL';
-    slaHours = 3;
+    slaHours = 4;
   } else if (finalScore >= 70) {
     tier = 'HIGH';
-    slaHours = 6;
+    slaHours = 4;
   } else if (finalScore >= 50) {
     tier = 'MEDIUM';
-    slaHours = 12;
+    slaHours = 8;
   } else {
     tier = 'LOW';
     slaHours = 24;

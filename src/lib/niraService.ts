@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import { INITIAL_NIRA_REPORTS, INITIAL_HOTSPOT_CLUSTERS, KOCHI_WARDS } from './niraMockData';
-import { DrainageReport, HotspotCluster, WardInfo, ReportStatus, SeverityLevel, DrainageIssueType, ResolutionAiVerification } from './niraTypes';
+import { DrainageReport, HotspotCluster, WardInfo, ReportStatus, SeverityLevel, DrainageIssueType, ResolutionAiVerification, SlaState, EscalationRecord } from './niraTypes';
 
 import { kmcWardService, WardLookupResult } from './kmcWardService';
 import {
@@ -425,6 +425,12 @@ export const niraService = {
       internalNotes?: string[];
       internalNote?: string;
       resolutionAiVerification?: ResolutionAiVerification;
+      assignedAt?: string;
+      slaState?: SlaState;
+      escalationLevel?: number;
+      escalatedAt?: string;
+      escalationHistory?: EscalationRecord[];
+      expectedResolutionTime?: string;
     }
   ): Promise<Partial<DrainageReport>> {
     const now = new Date().toISOString();
@@ -440,6 +446,12 @@ export const niraService = {
       ...(options?.priorityScore !== undefined ? { priority_score: options.priorityScore } : {}),
       ...(options?.severity ? { severity: options.severity } : {}),
       ...(options?.internalNotes ? { internal_notes: options.internalNotes } : {}),
+      ...(options?.assignedAt ? { assigned_at: options.assignedAt } : {}),
+      ...(options?.slaState ? { sla_state: options.slaState } : {}),
+      ...(options?.escalationLevel !== undefined ? { escalation_level: options.escalationLevel } : {}),
+      ...(options?.escalatedAt ? { escalated_at: options.escalatedAt } : {}),
+      ...(options?.escalationHistory ? { escalation_history: options.escalationHistory } : {}),
+      ...(options?.expectedResolutionTime ? { expected_resolution_time: options.expectedResolutionTime } : {}),
       ...(newStatus === 'RESOLVED' ? { resolved_at: now } : {}),
     };
 

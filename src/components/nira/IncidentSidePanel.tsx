@@ -28,13 +28,24 @@ import {
   Check,
   ShieldCheck,
   FileCheck,
+  Timer,
+  Zap,
+  History,
 } from 'lucide-react';
+import {
+  evaluateSla,
+  getAuthorityLevelInfo,
+  escalateReportOnBreach,
+  SLA_RULES,
+  formatDurationHoursMinutes,
+} from '@/lib/slaEngine';
 
 export interface IncidentSidePanelProps {
   report: DrainageReport | null;
   hotspots: HotspotCluster[];
   allReports: DrainageReport[];
   availableCrews: string[];
+  simulatedNowMs?: number;
   onClose: () => void;
   onReportUpdated: (updatedReport: DrainageReport) => void;
 }
@@ -44,6 +55,7 @@ export const IncidentSidePanel: React.FC<IncidentSidePanelProps> = ({
   hotspots,
   allReports,
   availableCrews,
+  simulatedNowMs,
   onClose,
   onReportUpdated,
 }) => {
@@ -78,16 +90,18 @@ export const IncidentSidePanel: React.FC<IncidentSidePanelProps> = ({
 
   if (!report) return null;
 
-  // SLA Calculation
-  const elapsedHours = Math.max(
-    0,
-    (Date.now() - new Date(report.created_at).getTime()) / (1000 * 60 * 60)
-  );
-  const slaLimit =
-    report.sla_hours ||
-    (report.severity === 'CRITICAL' ? 3 : report.severity === 'HIGH' ? 6 : 12);
-  const remainingHours = slaLimit - elapsedHours;
-  const isBreached = remainingHours < 0 && report.status !== 'RESOLVED';
+  // SLA Calculation using centralized SLA engine
+  const simulatedTime = simulatedNowMs || Date.now();
+  const sla = evaluateSla(report, simulatedTime);
+  const elapsedHours = sla.elapsedHours;
+  const slaLimit = sla.slaLimitHours;
+  const remainingHours = sla.remainingHours;
+  const isBreached = sla.isBreached;
+  const isApproaching = sla.isApproaching;
+  const currentAuth = sla.currentAuthorityLevel;
+  const nextAuth =
+    sla.nextAuthorityLevel ??
+    getAuthorityLevelInfo((sla.currentAuthorityLevel.level || 1) + 1, report.ward_number);
 
   // Check if inside a known hotspot
   const matchingHotspot = hotspots.find(
@@ -115,16 +129,21 @@ export const IncidentSidePanel: React.FC<IncidentSidePanelProps> = ({
   const handleAssignCrew = async () => {
     setIsUpdating(true);
     try {
+      const nowIso = new Date(simulatedTime).toISOString();
       await niraService.updateReportStatus(report.id, 'ASSIGNED', {
         assignedCrew: selectedCrew,
         assignedOfficer: selectedCrew,
+        assignedAt: report.assigned_at || nowIso,
+        slaState: 'ASSIGNED',
       });
       const updated: DrainageReport = {
         ...report,
         status: 'ASSIGNED',
         assigned_crew: selectedCrew,
         assigned_officer: selectedCrew,
-        updated_at: new Date().toISOString(),
+        assigned_at: report.assigned_at || nowIso,
+        sla_state: 'ASSIGNED',
+        updated_at: nowIso,
       };
       onReportUpdated(updated);
     } catch (e) {
@@ -137,14 +156,17 @@ export const IncidentSidePanel: React.FC<IncidentSidePanelProps> = ({
   const handleStartWork = async () => {
     setIsUpdating(true);
     try {
+      const nowIso = new Date(simulatedTime).toISOString();
       await niraService.updateReportStatus(report.id, 'IN_PROGRESS', {
         assignedCrew: report.assigned_crew || selectedCrew,
+        slaState: 'IN_PROGRESS',
       });
       const updated: DrainageReport = {
         ...report,
         status: 'IN_PROGRESS',
         assigned_crew: report.assigned_crew || selectedCrew,
-        updated_at: new Date().toISOString(),
+        sla_state: 'IN_PROGRESS',
+        updated_at: nowIso,
       };
       onReportUpdated(updated);
     } catch (e) {
@@ -190,7 +212,7 @@ export const IncidentSidePanel: React.FC<IncidentSidePanelProps> = ({
 
     setIsUpdating(true);
     try {
-      const timestampedNote = `[${new Date().toLocaleTimeString([], {
+      const timestampedNote = `[${new Date(simulatedTime).toLocaleTimeString([], {
         hour: '2-digit',
         minute: '2-digit',
       })}] ${newInternalNote.trim()}`;
@@ -204,7 +226,7 @@ export const IncidentSidePanel: React.FC<IncidentSidePanelProps> = ({
       const updated: DrainageReport = {
         ...report,
         internal_notes: updatedNotes,
-        updated_at: new Date().toISOString(),
+        updated_at: new Date(simulatedTime).toISOString(),
       };
       onReportUpdated(updated);
       setNewInternalNote('');
@@ -232,16 +254,18 @@ export const IncidentSidePanel: React.FC<IncidentSidePanelProps> = ({
 
   const handleConfirmResolve = async () => {
     setIsUpdating(true);
-    const now = new Date().toISOString();
+    const now = new Date(simulatedTime).toISOString();
     try {
       await niraService.updateReportStatus(report.id, 'RESOLVED', {
         resolutionPhotoUrl,
         resolutionNotes,
+        slaState: 'RESOLVED',
       });
 
       const updated: DrainageReport = {
         ...report,
         status: 'RESOLVED',
+        sla_state: 'RESOLVED',
         resolution_photo_url: resolutionPhotoUrl,
         resolution_notes: resolutionNotes,
         resolved_at: now,
@@ -259,18 +283,21 @@ export const IncidentSidePanel: React.FC<IncidentSidePanelProps> = ({
   const handleConfirmEscalate = async () => {
     setIsUpdating(true);
     try {
-      await niraService.updateReportStatus(report.id, 'ESCALATED', {
-        escalatedReason: escalationReason,
+      const nowIso = new Date(simulatedTime).toISOString();
+      const escalated = escalateReportOnBreach(report, {
+        customReason: escalationReason,
+        simulatedCurrentTimeMs: simulatedTime,
       });
 
-      const updated: DrainageReport = {
-        ...report,
-        status: 'ESCALATED',
-        escalated_reason: escalationReason,
-        updated_at: new Date().toISOString(),
-      };
+      await niraService.updateReportStatus(report.id, 'ESCALATED', {
+        escalatedReason: escalationReason,
+        escalationLevel: escalated.escalation_level,
+        escalatedAt: escalated.escalated_at,
+        slaState: 'ESCALATED',
+        escalationHistory: escalated.escalation_history,
+      });
 
-      onReportUpdated(updated);
+      onReportUpdated(escalated);
     } catch (e) {
       console.error('Failed to escalate report:', e);
     } finally {
@@ -278,66 +305,63 @@ export const IncidentSidePanel: React.FC<IncidentSidePanelProps> = ({
     }
   };
 
-  // Status timeline steps calculation: supports both standard and escalation workflows
-  const hasEvidence = Boolean(report.resolution_photo_url);
-  const isEscalatedPath = report.status === 'ESCALATED' || (isBreached && report.status !== 'RESOLVED');
-
-  const standardWorkflowSteps = [
-    { key: 'REPORTED', label: 'Reported', completed: true, current: report.status === 'OPEN' },
+  // 7 Required States according to municipal SLA & escalation specifications:
+  // Reported, Assigned, In Progress, SLA Approaching, SLA Breached, Escalated, Resolved
+  const requiredSlaLifecycle = [
     {
-      key: 'ASSIGNED',
+      state: 'REPORTED',
+      label: 'Reported',
+      isCompleted: true,
+      isCurrent: sla.slaState === 'REPORTED',
+      badgeColor: 'bg-slate-100 text-slate-700',
+    },
+    {
+      state: 'ASSIGNED',
       label: 'Assigned',
-      completed:
-        report.status === 'ASSIGNED' ||
-        report.status === 'IN_PROGRESS' ||
-        report.status === 'RESOLVED',
-      current: report.status === 'ASSIGNED',
+      isCompleted: Boolean(report.assigned_crew) || report.status === 'ASSIGNED' || report.status === 'IN_PROGRESS' || report.status === 'RESOLVED',
+      isCurrent: sla.slaState === 'ASSIGNED',
+      badgeColor: 'bg-indigo-100 text-indigo-800',
     },
     {
-      key: 'IN_PROGRESS',
-      label: 'Work Started',
-      completed: report.status === 'IN_PROGRESS' || report.status === 'RESOLVED',
-      current: report.status === 'IN_PROGRESS' && !hasEvidence,
+      state: 'IN_PROGRESS',
+      label: 'In Progress',
+      isCompleted: report.status === 'IN_PROGRESS' || report.status === 'RESOLVED',
+      isCurrent: sla.slaState === 'IN_PROGRESS',
+      badgeColor: 'bg-blue-100 text-[#256BF5]',
     },
     {
-      key: 'RESOLUTION_EVIDENCE',
-      label: 'Resolution Evidence Uploaded',
-      completed: hasEvidence || report.status === 'RESOLVED',
-      current: hasEvidence && report.status !== 'RESOLVED',
-    },
-    {
-      key: 'RESOLVED',
-      label: 'Resolved',
-      completed: report.status === 'RESOLVED',
-      current: report.status === 'RESOLVED',
-    },
-  ];
-
-  const escalationWorkflowSteps = [
-    { key: 'REPORTED', label: 'Reported', completed: true, current: false },
-    {
-      key: 'ASSIGNED',
-      label: 'Assigned',
-      completed: report.status === 'ASSIGNED' || report.status === 'IN_PROGRESS' || report.status === 'ESCALATED' || Boolean(report.assigned_crew),
-      current: false,
-    },
-    {
-      key: 'SLA_BREACHED',
-      label: 'SLA Breached',
-      completed: isBreached || report.status === 'ESCALATED',
-      current: isBreached && report.status !== 'ESCALATED',
+      state: 'SLA_APPROACHING',
+      label: 'SLA Approaching',
+      isCompleted: sla.isApproaching || sla.isBreached || report.status === 'ESCALATED',
+      isCurrent: sla.slaState === 'SLA_APPROACHING',
+      badgeColor: 'bg-amber-100 text-amber-800',
       isWarning: true,
     },
     {
-      key: 'ESCALATED',
-      label: 'Escalated',
-      completed: report.status === 'ESCALATED',
-      current: report.status === 'ESCALATED',
+      state: 'SLA_BREACHED',
+      label: 'SLA Breached',
+      isCompleted: sla.isBreached || report.status === 'ESCALATED' || report.sla_state === 'SLA_BREACHED',
+      isCurrent: sla.slaState === 'SLA_BREACHED',
+      badgeColor: 'bg-red-100 text-red-700',
       isDanger: true,
     },
+    {
+      state: 'ESCALATED',
+      label: 'Escalated',
+      isCompleted: report.status === 'ESCALATED' || (report.escalation_level !== undefined && report.escalation_level > 1),
+      isCurrent: sla.slaState === 'ESCALATED',
+      badgeColor: 'bg-red-200 text-red-900',
+      isDanger: true,
+    },
+    {
+      state: 'RESOLVED',
+      label: 'Resolved',
+      isCompleted: report.status === 'RESOLVED',
+      isCurrent: sla.slaState === 'RESOLVED',
+      badgeColor: 'bg-emerald-100 text-emerald-800',
+      isSuccess: true,
+    },
   ];
-
-  const activeWorkflowSteps = isEscalatedPath ? escalationWorkflowSteps : standardWorkflowSteps;
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/60 backdrop-blur-xs animate-fadeIn">
@@ -415,67 +439,137 @@ export const IncidentSidePanel: React.FC<IncidentSidePanelProps> = ({
           {/* TAB 1: INCIDENT OVERVIEW */}
           {activeTab === 'overview' && (
             <div className="space-y-6 animate-fadeIn">
-              {/* STATUS WORKFLOW TIMELINE */}
+              {/* STATUS WORKFLOW TIMELINE: 7 REQUIRED SLA STATES */}
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
                 <div className="flex items-center justify-between text-xs font-black">
-                  <span className="text-slate-700 uppercase tracking-wider text-[10px]">
-                    Municipal Status Workflow: {isEscalatedPath ? 'Escalation Track' : 'Resolution Track'}
+                  <span className="text-slate-700 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+                    <Timer className="w-3.5 h-3.5 text-[#256BF5]" />
+                    Municipal SLA & Resolution Lifecycle (7 Stages)
                   </span>
                   <span
                     className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                      report.status === 'RESOLVED'
+                      sla.slaState === 'RESOLVED'
                         ? 'bg-emerald-100 text-emerald-800'
-                        : report.status === 'ESCALATED'
-                        ? 'bg-red-100 text-[#EF4444]'
-                        : report.status === 'IN_PROGRESS'
+                        : sla.slaState === 'ESCALATED'
+                        ? 'bg-red-200 text-red-900 border border-red-300'
+                        : sla.slaState === 'SLA_BREACHED'
+                        ? 'bg-red-100 text-[#EF4444] border border-red-200'
+                        : sla.slaState === 'SLA_APPROACHING'
+                        ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                        : sla.slaState === 'IN_PROGRESS'
                         ? 'bg-blue-100 text-[#256BF5]'
-                        : report.status === 'ASSIGNED'
+                        : sla.slaState === 'ASSIGNED'
                         ? 'bg-indigo-100 text-indigo-800'
-                        : 'bg-amber-100 text-amber-800'
+                        : 'bg-slate-100 text-slate-800'
                     }`}
                   >
-                    {report.status === 'OPEN' ? 'REPORTED' : report.status.replace('_', ' ')}
+                    Current: {sla.slaState.replace('_', ' ')}
                   </span>
                 </div>
 
-                {/* Visual Step Bar */}
-                <div className={`grid ${isEscalatedPath ? 'grid-cols-4' : 'grid-cols-5'} gap-2 pt-1 text-center`}>
-                  {activeWorkflowSteps.map((step, idx) => (
+                {/* 7-State Step Indicators */}
+                <div className="grid grid-cols-7 gap-1.5 pt-1 text-center">
+                  {requiredSlaLifecycle.map((step, idx) => (
                     <div key={idx} className="space-y-1">
                       <div
-                        className={`h-2 rounded-full transition-all ${
-                          step.completed
-                            ? (step as any).isDanger
+                        className={`h-2 rounded-full transition-all relative ${
+                          step.isCompleted
+                            ? step.isDanger
                               ? 'bg-[#EF4444]'
-                              : (step as any).isWarning
+                              : step.isWarning
                               ? 'bg-amber-500'
+                              : step.isSuccess
+                              ? 'bg-emerald-500'
                               : 'bg-[#256BF5]'
-                            : step.current
-                            ? 'bg-[#FFC800]'
                             : 'bg-slate-200'
                         }`}
-                      ></div>
-                      <span className={`text-[10px] font-bold block ${step.current ? 'text-slate-950 font-black' : 'text-slate-500'}`}>
+                      >
+                        {step.isCurrent && (
+                          <span className="absolute inset-0 rounded-full bg-current opacity-75 animate-ping"></span>
+                        )}
+                      </div>
+                      <span
+                        className={`text-[9px] leading-tight block truncate ${
+                          step.isCurrent
+                            ? 'text-slate-950 font-black'
+                            : step.isCompleted
+                            ? 'text-slate-700 font-bold'
+                            : 'text-slate-400'
+                        }`}
+                        title={step.label}
+                      >
                         {step.label}
                       </span>
                     </div>
                   ))}
                 </div>
-
-                {/* Alternate SLA Breached / Escalated Alert if active */}
-                {report.status === 'ESCALATED' && (
-                  <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-900 text-xs space-y-1">
-                    <div className="flex items-center gap-1.5 font-black text-red-700">
-                      <AlertOctagon className="w-4 h-4" />
-                      <span>Ticket Formally Escalated to Level 2</span>
-                    </div>
-                    <p className="text-[11px] font-medium leading-relaxed">
-                      {report.escalated_reason ||
-                        'Requires urgent zonal executive intervention.'}
-                    </p>
-                  </div>
-                )}
               </div>
+
+              {/* PROMINENT SLA BREACHED WARNING BANNER */}
+              {(sla.isBreached || report.status === 'ESCALATED' || report.sla_state === 'SLA_BREACHED') && (
+                <div className="p-4 sm:p-5 rounded-3xl bg-red-50/95 border-2 border-red-500 text-slate-900 shadow-md space-y-4 animate-fadeIn">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-red-600 animate-ping"></span>
+                      <span className="text-xs font-black uppercase tracking-wider text-red-700 flex items-center gap-1.5">
+                        <AlertOctagon className="w-4 h-4 text-red-600" />
+                        SLA BREACHED
+                      </span>
+                    </div>
+                    <span className="px-2.5 py-0.5 rounded-full bg-red-100 border border-red-200 text-red-800 text-[10px] font-black font-mono">
+                      +{Math.max(0, sla.elapsedHours - sla.slaLimitHours).toFixed(1)}h OVERDUE
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-white/90 p-3 rounded-2xl border border-red-200 text-xs shadow-2xs">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase block">Ticket</span>
+                      <span className="font-black text-slate-900 font-mono">{report.ticket_code}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase block">Ward</span>
+                      <span className="font-black text-slate-900">{report.ward}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase block">Elapsed</span>
+                      <span className="font-black text-red-600 font-mono">{sla.elapsedFormatted}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase block">SLA Limit</span>
+                      <span className="font-black text-slate-900 font-mono">{sla.slaLimitHours}h</span>
+                    </div>
+                  </div>
+
+                  {/* Configured Authority Escalation Routing */}
+                  <div className="p-3.5 bg-red-600 text-white rounded-2xl text-xs space-y-2 shadow-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-black tracking-wider text-red-100 flex items-center gap-1">
+                        <Zap className="w-3.5 h-3.5 text-[#FFC800]" />
+                        Configured Authority Escalation Routing:
+                      </span>
+                      <span className="text-[10px] font-bold text-red-200">
+                        Operational Prototype
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 font-black text-xs">
+                      <span className="bg-red-700/90 px-2.5 py-1 rounded-xl text-white">
+                        Level {currentAuth.level} → {currentAuth.title}
+                      </span>
+                      <ArrowRight className="w-4 h-4 text-[#FFC800] shrink-0" />
+                      <span className="bg-white text-red-700 px-2.5 py-1 rounded-xl shadow-xs">
+                        Level {nextAuth.level} → {nextAuth.title}
+                      </span>
+                    </div>
+                  </div>
+
+                  {report.escalated_reason && (
+                    <div className="p-3 bg-red-100/70 rounded-xl border border-red-200 text-xs">
+                      <span className="text-[10px] font-black uppercase text-red-800 block mb-0.5">Escalation Reason:</span>
+                      <p className="text-red-950 font-medium italic">&quot;{report.escalated_reason}&quot;</p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* PHOTOGRAPH & VISUAL CLASSIFICATION */}
               <div className="rounded-3xl border border-slate-200 overflow-hidden bg-white shadow-xs">
@@ -638,53 +732,140 @@ export const IncidentSidePanel: React.FC<IncidentSidePanelProps> = ({
               </div>
 
               {/* SLA & ESCALATION DEADLINE */}
-              <div className="p-5 rounded-3xl bg-slate-50 border border-slate-200 space-y-3">
-                <div className="flex items-center justify-between text-xs font-black">
+              <div className="p-5 rounded-3xl bg-slate-50 border border-slate-200 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-black">
                   <span className="text-slate-800 flex items-center gap-1.5">
-                    <Clock className="w-4 h-4 text-[#256BF5]" /> SLA Monitoring & Timeline
+                    <Clock className="w-4 h-4 text-[#256BF5]" />
+                    SLA Countdown & Escalation Engine
                   </span>
-                  <span
-                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${
-                      isBreached
-                        ? 'bg-red-100 text-[#EF4444]'
-                        : remainingHours <= 2
-                        ? 'bg-amber-100 text-amber-800'
-                        : 'bg-blue-100 text-[#256BF5]'
-                    }`}
-                  >
-                    {isBreached
-                      ? `Breached (+${Math.round(Math.abs(remainingHours))}h Overdue)`
-                      : `${Math.round(remainingHours)}h Remaining`}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                  <div className="p-2.5 rounded-xl bg-white border border-slate-200">
-                    <span className="text-[10px] text-slate-400 font-bold block">
-                      Target SLA
-                    </span>
-                    <strong className="font-mono text-slate-900">{slaLimit} Hours</strong>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-white border border-slate-200">
-                    <span className="text-[10px] text-slate-400 font-bold block">
-                      Elapsed
-                    </span>
-                    <strong className="font-mono text-slate-900">
-                      {Math.round(elapsedHours * 10) / 10}h
-                    </strong>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-white border border-slate-200">
-                    <span className="text-[10px] text-slate-400 font-bold block">
-                      Escalation Level
-                    </span>
-                    <strong
-                      className={`font-mono ${
-                        report.status === 'ESCALATED' ? 'text-red-600' : 'text-slate-900'
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`px-3 py-1 rounded-full text-[10px] font-black tracking-wide uppercase ${
+                        sla.isBreached
+                          ? 'bg-red-100 text-[#EF4444] border border-red-200 animate-pulse'
+                          : sla.isApproaching
+                          ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                          : sla.slaState === 'RESOLVED'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-blue-100 text-[#256BF5]'
                       }`}
                     >
-                      {report.status === 'ESCALATED' ? 'Level 2 (High)' : 'Level 1 (Zonal)'}
-                    </strong>
+                      {sla.remainingFormatted}
+                    </span>
                   </div>
+                </div>
+
+                {/* 4 Diagnostic Indicator Cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+                  <div className="p-3 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase">
+                      Target SLA
+                    </span>
+                    <strong className="font-mono text-slate-900 text-sm">{sla.slaLimitHours} Hours</strong>
+                    <span className="text-[9px] text-slate-400 block mt-0.5 font-medium">
+                      ({report.severity === 'LOW' ? '24h rule' : report.severity === 'MEDIUM' ? '8h rule' : '4h rule'})
+                    </span>
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase">
+                      Elapsed Time
+                    </span>
+                    <strong className="font-mono text-slate-900 text-sm">
+                      {sla.elapsedFormatted}
+                    </strong>
+                    <span className="text-[9px] text-slate-400 block mt-0.5 font-medium">
+                      Since Intake
+                    </span>
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase">
+                      Current Routing
+                    </span>
+                    <strong
+                      className={`text-xs block truncate ${
+                        sla.isBreached || report.status === 'ESCALATED' ? 'text-red-600 font-black' : 'text-slate-900 font-bold'
+                      }`}
+                      title={currentAuth.title}
+                    >
+                      L{currentAuth.level}: {currentAuth.title}
+                    </strong>
+                    <span className="text-[9px] text-slate-400 block mt-0.5 truncate">
+                      {currentAuth.designation}
+                    </span>
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase">
+                      Next Escalation
+                    </span>
+                    <strong
+                      className="text-xs block text-[#256BF5] font-black truncate"
+                      title={nextAuth.title}
+                    >
+                      L{nextAuth.level}: {nextAuth.title}
+                    </strong>
+                    <span className="text-[9px] text-slate-400 block mt-0.5 truncate">
+                      {nextAuth.designation}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Authority Level Escalation Hierarchy Visualization */}
+                <div className="p-3.5 rounded-2xl bg-white border border-slate-200 text-xs space-y-2">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
+                    <span>Configured Prototype Authority Hierarchy:</span>
+                    <span className="text-[10px] text-slate-400">Step Routing</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                    <span className={`px-2 py-1 rounded-lg border text-xs font-black ${currentAuth.level === 1 ? 'bg-blue-50 border-[#256BF5] text-[#256BF5]' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
+                      Level 1: Ward Response Team
+                    </span>
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+                    <span className={`px-2 py-1 rounded-lg border text-xs font-black ${currentAuth.level === 2 ? 'bg-amber-50 border-amber-400 text-amber-900' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
+                      Level 2: Supervisory Officer (AEE)
+                    </span>
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+                    <span className={`px-2 py-1 rounded-lg border text-xs font-black ${currentAuth.level >= 3 ? 'bg-red-50 border-red-400 text-red-900' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
+                      Level 3: Central Directorate
+                    </span>
+                  </div>
+                </div>
+
+                {/* Escalation History Log if present */}
+                {report.escalation_history && report.escalation_history.length > 0 && (
+                  <div className="p-3.5 rounded-2xl bg-red-50/70 border border-red-200 space-y-2 text-xs">
+                    <div className="flex items-center gap-1.5 font-black text-red-900">
+                      <History className="w-4 h-4 text-red-600" />
+                      <span>Audit Trail: Recorded Escalations ({report.escalation_history.length})</span>
+                    </div>
+                    <div className="space-y-2">
+                      {report.escalation_history.map((record, idx) => (
+                        <div key={idx} className="p-2.5 bg-white rounded-xl border border-red-100 text-[11px] space-y-1">
+                          <div className="flex items-center justify-between font-bold">
+                            <span className="text-red-700 font-mono">
+                              Escalated to Level {record.level} ({record.to_authority})
+                            </span>
+                            <span className="text-[10px] text-slate-400">
+                              {new Date(record.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <p className="text-slate-700 italic">&quot;{record.reason}&quot;</p>
+                          <div className="text-[10px] text-slate-400 flex items-center justify-between pt-0.5">
+                            <span>From: {record.from_authority}</span>
+                            <span>Target: {record.to_authority}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Prototype Disclaimer */}
+                <div className="p-2.5 rounded-xl bg-slate-100/80 border border-slate-200 text-[10px] text-slate-500 font-medium">
+                  <strong className="text-slate-700 font-bold block mb-0.5">Notice:</strong>
+                  This escalation engine is a prototype municipal demonstration with automated SLA monitoring and hierarchical routing. It is not connected to live KMC municipal emergency dispatch.
                 </div>
               </div>
 
@@ -891,27 +1072,80 @@ export const IncidentSidePanel: React.FC<IncidentSidePanelProps> = ({
                 </div>
               )}
 
-              {/* ACTION 5: ESCALATE TICKET */}
-              {report.status !== 'ESCALATED' && report.status !== 'RESOLVED' && (
-                <div className="p-5 rounded-3xl bg-red-50/70 border border-red-200 space-y-3">
-                  <h4 className="text-xs font-black text-red-900 flex items-center gap-1.5">
-                    <AlertTriangle className="w-4 h-4 text-red-600" /> 5. Escalate to Higher Authority
-                  </h4>
-                  <textarea
-                    rows={2}
-                    value={escalationReason}
-                    onChange={e => setEscalationReason(e.target.value)}
-                    placeholder="Provide reason for administrative escalation..."
-                    className="w-full p-2.5 rounded-xl bg-white border border-red-200 text-slate-800 text-xs focus:outline-hidden"
-                  ></textarea>
-                  <button
-                    type="button"
-                    disabled={isUpdating}
-                    onClick={handleConfirmEscalate}
-                    className="w-full py-2.5 rounded-xl bg-[#EF4444] hover:bg-red-700 text-white font-black text-xs shadow-sm transition-colors"
-                  >
-                    Confirm Administrative Escalation
-                  </button>
+              {/* ACTION 5: ESCALATE TICKET & ROUTING */}
+              {report.status !== 'RESOLVED' && (
+                <div className="p-5 rounded-3xl bg-red-50/80 border-2 border-red-300 space-y-3.5">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-black text-red-900 flex items-center gap-1.5">
+                      <AlertTriangle className="w-4 h-4 text-red-600" /> 5. Municipal Authority Escalation Routing
+                    </h4>
+                    <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-800 text-[10px] font-black uppercase font-mono">
+                      Current: Level {currentAuth.level}
+                    </span>
+                  </div>
+
+                  <div className="p-3 bg-white rounded-2xl border border-red-200 text-xs space-y-1.5 shadow-2xs">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block">Next Authority Escalation Target:</span>
+                    <div className="flex items-center gap-2 font-black text-slate-900">
+                      <span className="text-slate-700">Level {currentAuth.level} ({currentAuth.title})</span>
+                      <ArrowRight className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                      <span className="text-red-700">Level {nextAuth.level} ({nextAuth.title})</span>
+                    </div>
+                    <p className="text-[10px] text-slate-500">
+                      Forwarding to: {nextAuth.designation}
+                    </p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-700 block">
+                      Escalation Reason & Operational Dispatch Note:
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={escalationReason}
+                      onChange={e => setEscalationReason(e.target.value)}
+                      placeholder="Provide reason for administrative escalation..."
+                      className="w-full p-2.5 rounded-xl bg-white border border-red-200 text-slate-800 text-xs focus:outline-hidden focus:border-red-500 transition-colors"
+                    ></textarea>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                    <button
+                      type="button"
+                      disabled={isUpdating}
+                      onClick={handleConfirmEscalate}
+                      className="w-full py-2.5 rounded-xl bg-[#EF4444] hover:bg-red-700 text-white font-black text-xs shadow-sm transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    >
+                      <Zap className="w-3.5 h-3.5" />
+                      <span>{isUpdating ? 'Escalating...' : `Escalate to Level ${nextAuth.level}`}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={isUpdating}
+                      onClick={() => {
+                        const breachReason = `SLA Breached: Overdue by simulated authority trigger on ${report.ticket_code}. Requires immediate supervisory dispatch.`;
+                        setEscalationReason(breachReason);
+                        const nowIso = new Date(simulatedTime).toISOString();
+                        const escalated = escalateReportOnBreach(report, {
+                          customReason: breachReason,
+                          simulatedCurrentTimeMs: simulatedTime,
+                        });
+                        niraService.updateReportStatus(report.id, 'ESCALATED', {
+                          escalatedReason: breachReason,
+                          escalationLevel: escalated.escalation_level,
+                          escalatedAt: escalated.escalated_at,
+                          slaState: 'SLA_BREACHED',
+                          escalationHistory: escalated.escalation_history,
+                        });
+                        onReportUpdated(escalated);
+                      }}
+                      className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs shadow-sm transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    >
+                      <Timer className="w-3.5 h-3.5 text-[#FFC800]" />
+                      <span>Trigger SLA Breach (Demo)</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

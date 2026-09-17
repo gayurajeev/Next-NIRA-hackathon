@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { DrainageReport, ReportStatus } from '@/lib/niraTypes';
 import { NIRAPriorityBadge } from './NIRAPriorityBadge';
+import { evaluateSla } from '@/lib/slaEngine';
 import {
   ClipboardList,
   User,
@@ -74,21 +75,18 @@ export const MyReports: React.FC<MyReportsProps> = ({
     };
   }, [reports]);
 
-  // SLA Calculation Helper (Synchronized with Authority Command Center)
+  // SLA Calculation Helper (Synchronized with Authority Command Center & centralized SLA engine)
   const getSlaInfo = (report: DrainageReport) => {
-    const limit = report.sla_hours || (report.severity === 'CRITICAL' ? 3 : report.severity === 'HIGH' ? 6 : 12);
-    const created = new Date(report.created_at).getTime();
-    const now = Date.now();
-    const elapsedHours = Math.max(0, (now - created) / (1000 * 60 * 60));
-    const remainingHours = Math.max(0, limit - elapsedHours);
-    const isBreached = report.status !== 'RESOLVED' && (elapsedHours > limit || report.status === 'ESCALATED');
-    const isApproaching = report.status !== 'RESOLVED' && !isBreached && remainingHours <= 2;
+    const sla = evaluateSla(report);
     return {
-      limit,
-      elapsedHours: Math.round(elapsedHours * 10) / 10,
-      remainingHours: Math.round(remainingHours * 10) / 10,
-      isBreached,
-      isApproaching,
+      limit: sla.slaLimitHours,
+      elapsedHours: Math.round(sla.elapsedHours * 10) / 10,
+      remainingHours: Math.round(sla.remainingHours * 10) / 10,
+      isBreached: sla.isBreached,
+      isApproaching: sla.isApproaching,
+      elapsedFormatted: sla.elapsedFormatted,
+      remainingFormatted: sla.remainingFormatted,
+      slaState: sla.slaState,
     };
   };
 
