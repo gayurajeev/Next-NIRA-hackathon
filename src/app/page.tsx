@@ -278,7 +278,22 @@ function NiraMainApp() {
             )}
 
             {activeTab === 'my-reports' && (
-              <MyReports reports={reports} />
+              <MyReports
+                reports={reports}
+                isLoading={isLoading}
+                onRefresh={async () => {
+                  try {
+                    setIsLoading(true);
+                    const fetchedReports = await niraService.getReports();
+                    setReports(fetchedReports);
+                  } catch (err) {
+                    console.error('Failed refreshing reports:', err);
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
+                onNavigateToReport={() => setActiveTab('citizen')}
+              />
             )}
 
             {activeTab === 'command' && (
