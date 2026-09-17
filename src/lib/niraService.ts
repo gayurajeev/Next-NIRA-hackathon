@@ -335,6 +335,18 @@ export const niraService = {
         console.warn('Supabase fetch failed, fallback to local mock data:', e);
       }
     }
+
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('nira_local_reports');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
+        }
+      } catch {}
+    }
     return INITIAL_NIRA_REPORTS;
   },
 
@@ -402,11 +414,22 @@ export const niraService = {
     if (supabase) {
       try {
         const { data, error } = await supabase.from('drainage_reports').insert([newReport]).select().single();
-        if (!error && data) return data as DrainageReport;
+        if (!error && data) {
+          const inserted = data as DrainageReport;
+          INITIAL_NIRA_REPORTS.unshift(inserted);
+          return inserted;
+        }
       } catch (e) {
         console.warn('Supabase report insert failed, fallback to local insert:', e);
       }
     }
+
+    INITIAL_NIRA_REPORTS.unshift(newReport);
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('nira_local_reports', JSON.stringify(INITIAL_NIRA_REPORTS));
+      }
+    } catch {}
 
     return newReport;
   },
@@ -454,6 +477,19 @@ export const niraService = {
       ...(options?.expectedResolutionTime ? { expected_resolution_time: options.expectedResolutionTime } : {}),
       ...(newStatus === 'RESOLVED' ? { resolved_at: now } : {}),
     };
+
+    const targetIdx = INITIAL_NIRA_REPORTS.findIndex(r => r.id === id);
+    if (targetIdx !== -1) {
+      INITIAL_NIRA_REPORTS[targetIdx] = {
+        ...INITIAL_NIRA_REPORTS[targetIdx],
+        ...updatePayload,
+      };
+      try {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('nira_local_reports', JSON.stringify(INITIAL_NIRA_REPORTS));
+        }
+      } catch {}
+    }
 
     if (supabase) {
       try {

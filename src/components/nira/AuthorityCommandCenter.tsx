@@ -415,13 +415,11 @@ export const AuthorityCommandCenter: React.FC<AuthorityCommandCenterProps> = ({
           {!isAuthority ? (
             <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 px-4 py-2 rounded-2xl text-xs">
               <span className="font-bold text-amber-900">
-                Municipal Portal: <strong className="font-mono">admin@nira.in</strong>
+                Municipal Operations Authentication Required
               </span>
               <button
                 type="button"
-                onClick={() =>
-                  onOpenAuthModal ? onOpenAuthModal() : signInAuthority('admin@nira.in', 'nira@123')
-                }
+                onClick={() => (onOpenAuthModal ? onOpenAuthModal() : null)}
                 className="px-3.5 py-1.5 rounded-xl bg-[#FFC800] hover:bg-amber-400 text-slate-950 font-black text-xs shadow-xs transition-all flex items-center gap-1.5"
               >
                 <Building2 className="w-3.5 h-3.5" />

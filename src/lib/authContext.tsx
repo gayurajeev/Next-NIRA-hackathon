@@ -166,7 +166,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return {
       success: false,
-      error: 'Invalid Authority credentials. Use admin@nira.in and password nira@123',
+      error: 'Invalid Authority credentials. Please verify your municipal email and password.',
     };
   };
 

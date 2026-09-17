@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthProvider } from "@/lib/authContext";
+import { Header } from "@/components/Header";
 
 export const metadata: Metadata = {
   title: "NIRA - Intelligent Civic Drainage Reporting & Response System (Keralam)",
@@ -19,8 +21,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="light">
-      <body className="antialiased bg-[#EDF4FF] text-slate-900">
-        {children}
+      <body className="antialiased bg-[#EDF4FF] text-slate-900 min-h-screen flex flex-col font-sans">
+        <AuthProvider>
+          <Header />
+          <main className="flex-1 flex flex-col">
+            {children}
+          </main>
+        </AuthProvider>
       </body>
     </html>
   );

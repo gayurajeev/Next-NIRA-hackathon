@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth, UserRole } from '@/lib/authContext';
 import { X, ShieldCheck, User, Lock, Mail, CheckCircle2, ArrowRight, AlertCircle, Building2 } from 'lucide-react';
 
@@ -8,17 +9,20 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   defaultRole?: UserRole;
+  redirectUrl?: string;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
   onClose,
   defaultRole = 'CITIZEN',
+  redirectUrl,
 }) => {
+  const router = useRouter();
   const { signInWithGoogle, signInAuthority } = useAuth();
   const [activeTab, setActiveTab] = useState<UserRole>(defaultRole);
-  const [email, setEmail] = useState<string>('admin@nira.in');
-  const [password, setPassword] = useState<string>('nira@123');
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
@@ -34,6 +38,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     if (res.success) {
       onClose();
+      router.push(redirectUrl || '/admin/command-center');
     } else {
       setErrorMsg(res.error || 'Login failed. Please check credentials.');
     }
@@ -49,6 +54,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setErrorMsg(res.error);
     } else {
       onClose();
+      router.push(redirectUrl || '/user');
     }
   };
 
@@ -108,7 +114,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             }`}
           >
             <Building2 className="w-3.5 h-3.5" />
-            Government
+            Authority
           </button>
         </div>
 
@@ -132,7 +138,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               disabled={isSubmitting}
               className="w-full py-3.5 px-4 rounded-2xl border-2 border-slate-200 bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm shadow-sm flex items-center justify-center gap-3 transition-all hover:scale-[1.01] active:scale-95"
             >
-              {/* Google G Logo SVG */}
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path
                   fill="#4285F4"
@@ -159,9 +164,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {/* GOVERNMENT AUTHORITY TAB: EMAIL / PASSWORD */}
         {activeTab === 'GOVERNMENT' && (
           <form onSubmit={handleAuthorityLogin} className="space-y-4 text-left">
-            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold">
-              Municipal Officer Credentials: <br />
-              <span className="font-mono font-black text-slate-900">admin@nira.in</span> / <span className="font-mono font-black text-slate-900">nira@123</span>
+            <div className="p-3.5 rounded-2xl bg-blue-50 border border-blue-200 text-[#256BF5] text-xs font-bold flex items-center gap-2.5">
+              <ShieldCheck className="w-5 h-5 flex-shrink-0 text-[#256BF5]" />
+              <div className="leading-snug">
+                <span className="text-slate-900 font-black">Official Municipal Operations Portal</span>
+                <p className="text-[11px] text-slate-600 font-medium mt-0.5">Authorized KMC Engineers & Ward Officers login</p>
+              </div>
             </div>
 
             {errorMsg && (
@@ -178,6 +186,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <input
                 type="email"
                 required
+                placeholder="admin@nira.in"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#256BF5]"
@@ -191,6 +200,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <input
                 type="password"
                 required
+                placeholder="••••••••"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#256BF5]"
