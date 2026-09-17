@@ -5,6 +5,7 @@ import { DrainageReport, HotspotCluster, ReportStatus, SeverityLevel } from '@/l
 import { niraService } from '@/lib/niraService';
 import { NIRAPriorityBadge } from './NIRAPriorityBadge';
 import { IncidentSidePanel } from './IncidentSidePanel';
+import { ResolutionEvidenceModal } from './ResolutionEvidenceModal';
 import { useAuth } from '@/lib/authContext';
 import {
   ShieldAlert,
@@ -924,6 +925,19 @@ export const AuthorityCommandCenter: React.FC<AuthorityCommandCenterProps> = ({
                       {/* Inspect / Quick Action */}
                       <td className="px-3 py-3 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
+                          {rep.status !== 'RESOLVED' && (
+                            <button
+                              type="button"
+                              onClick={e => {
+                                e.stopPropagation();
+                                setResolutionModalReport(rep);
+                              }}
+                              className="px-2.5 py-1 rounded-xl bg-emerald-50 hover:bg-[#10B981] hover:text-white text-emerald-700 font-black text-[10px] transition-all flex items-center gap-1 border border-emerald-200"
+                            >
+                              <FileCheck className="w-3 h-3" />
+                              <span>Resolve</span>
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={e => {
@@ -1039,116 +1053,20 @@ export const AuthorityCommandCenter: React.FC<AuthorityCommandCenterProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* QUICK MODAL 2: RESOLUTION EVIDENCE MODAL                                  */}
+      {/* QUICK MODAL 2: CLOSED-LOOP RESOLUTION EVIDENCE MODAL                      */}
       {/* ========================================================================= */}
       {resolutionModalReport && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn">
-          <div className="relative w-full max-w-lg bg-white rounded-3xl p-6 sm:p-8 border border-blue-100 shadow-2xl space-y-5">
-            <button
-              type="button"
-              onClick={() => setResolutionModalReport(null)}
-              className="absolute top-4 right-4 p-2 rounded-xl bg-slate-100 text-slate-500 hover:text-slate-800"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#10B981] text-white flex items-center justify-center">
-                <FileCheck className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-lg font-black text-slate-900">Upload Resolution Evidence</h3>
-                <p className="text-xs text-slate-500 font-bold">
-                  {resolutionModalReport.ticket_code} • {resolutionModalReport.ward}
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[11px] font-black text-slate-500 mb-1">
-                  1. Reported Problem Photo
-                </label>
-                <div className="w-full h-28 rounded-2xl bg-slate-100 overflow-hidden border border-slate-200">
-                  <img
-                    src={resolutionModalReport.photo_url}
-                    alt="Before"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-black text-[#10B981] mb-1">
-                  2. Resolution Evidence Photo
-                </label>
-                <div className="w-full h-28 rounded-2xl bg-slate-100 overflow-hidden border-2 border-emerald-500 relative">
-                  <img
-                    src={resolutionPhotoUrl}
-                    alt="After"
-                    className="w-full h-full object-cover"
-                  />
-                  {isUploadingResolution && (
-                    <div className="absolute inset-0 bg-slate-900/50 flex items-center justify-center text-white text-xs font-black">
-                      Uploading...
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <input
-                ref={resolutionFileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleResolutionFileUpload}
-                className="hidden"
-              />
-
-              <button
-                type="button"
-                onClick={() => resolutionFileInputRef.current?.click()}
-                className="w-full py-2.5 px-3 rounded-xl bg-emerald-50 border-2 border-dashed border-emerald-300 text-[#10B981] font-black text-xs flex items-center justify-center gap-2 hover:bg-emerald-100/60"
-              >
-                <UploadCloud className="w-4 h-4" />
-                <span>Upload Cleared Drain Work Photo</span>
-              </button>
-            </div>
-
-            <div>
-              <label className="block text-xs font-black text-slate-700 mb-1">
-                Official Resolution Notes
-              </label>
-              <textarea
-                rows={2}
-                value={resolutionNotes}
-                onChange={e => setResolutionNotes(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-hidden focus:border-[#10B981]"
-                placeholder="Details of desilting, repair or trash extraction performed..."
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setResolutionModalReport(null)}
-                className="px-4 py-2 rounded-xl text-xs font-black text-slate-600 hover:bg-slate-100"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={updatingId === resolutionModalReport.id}
-                onClick={handleConfirmResolve}
-                className="px-5 py-2.5 rounded-xl bg-[#10B981] hover:bg-emerald-600 text-white text-xs font-black shadow-md shadow-green-500/25 flex items-center gap-1.5"
-              >
-                <CheckCircle className="w-4 h-4" />
-                <span>Verify & Mark Resolved</span>
-              </button>
-            </div>
-          </div>
-        </div>
+        <ResolutionEvidenceModal
+          report={resolutionModalReport}
+          onClose={() => setResolutionModalReport(null)}
+          onResolved={updatedObj => {
+            onReportUpdated(updatedObj);
+            if (selectedTicket?.id === updatedObj.id) {
+              setSelectedTicket(updatedObj);
+            }
+            setResolutionModalReport(null);
+          }}
+        />
       )}
 
       {/* ========================================================================= */}

@@ -157,47 +157,95 @@ export const MyReports: React.FC<MyReportsProps> = ({ reports }) => {
 
               {/* TIMELINE PROGRESS PIPELINE (Fund My Crazy Style) */}
               <div className="pt-2">
-                <p className="text-[11px] font-black text-slate-600 uppercase tracking-wider mb-3">Resolution Progress Timeline</p>
-                <div className="grid grid-cols-4 gap-2 text-center text-[11px] font-black">
-                  
+                <p className="text-[11px] font-black text-slate-600 uppercase tracking-wider mb-3">
+                  Resolution Progress Timeline
+                </p>
+                <div className="grid grid-cols-5 gap-1.5 text-center text-[10px] font-black">
                   {/* Step 1: Reported */}
                   <div className="space-y-1.5">
-                    <div className="w-full h-2.5 rounded-full bg-[#256BF5]"></div>
+                    <div className="w-full h-2 rounded-full bg-[#256BF5]"></div>
                     <span className="text-[#256BF5]">1. Reported</span>
                   </div>
 
-                  {/* Step 2: Ward Officer Assigned */}
+                  {/* Step 2: Assigned */}
                   <div className="space-y-1.5">
-                    <div className={`w-full h-2.5 rounded-full ${report.status !== 'OPEN' ? 'bg-[#256BF5]' : 'bg-slate-200'}`}></div>
-                    <span className={report.status !== 'OPEN' ? 'text-[#256BF5]' : 'text-slate-400'}>2. Ward Assigned</span>
-                  </div>
-
-                  {/* Step 3: In Progress / Escalated */}
-                  <div className="space-y-1.5">
-                    <div className={`w-full h-2.5 rounded-full ${
-                      report.status === 'IN_PROGRESS' || report.status === 'RESOLVED'
-                        ? 'bg-[#256BF5]'
-                        : report.status === 'ESCALATED'
-                        ? 'bg-[#EF4444]'
-                        : 'bg-slate-200'
-                    }`}></div>
-                    <span className={
-                      report.status === 'ESCALATED' 
-                        ? 'text-[#EF4444]' 
-                        : report.status === 'IN_PROGRESS' || report.status === 'RESOLVED'
-                        ? 'text-[#256BF5]' 
-                        : 'text-slate-400'
-                    }>
-                      3. {report.status === 'ESCALATED' ? 'Escalated' : report.assigned_crew ? 'Crew Onsite' : 'In Progress'}
+                    <div
+                      className={`w-full h-2 rounded-full ${
+                        report.status !== 'OPEN' || report.assigned_crew
+                          ? 'bg-[#256BF5]'
+                          : 'bg-slate-200'
+                      }`}
+                    ></div>
+                    <span
+                      className={
+                        report.status !== 'OPEN' || report.assigned_crew
+                          ? 'text-[#256BF5]'
+                          : 'text-slate-400'
+                      }
+                    >
+                      2. Assigned
                     </span>
                   </div>
 
-                  {/* Step 4: Resolved */}
+                  {/* Step 3: Work Started */}
                   <div className="space-y-1.5">
-                    <div className={`w-full h-2.5 rounded-full ${report.status === 'RESOLVED' ? 'bg-[#10B981]' : 'bg-slate-200'}`}></div>
-                    <span className={report.status === 'RESOLVED' ? 'text-[#10B981]' : 'text-slate-400'}>4. Cleared</span>
+                    <div
+                      className={`w-full h-2 rounded-full ${
+                        report.status === 'IN_PROGRESS' || report.status === 'RESOLVED'
+                          ? 'bg-[#256BF5]'
+                          : report.status === 'ESCALATED'
+                          ? 'bg-[#EF4444]'
+                          : 'bg-slate-200'
+                      }`}
+                    ></div>
+                    <span
+                      className={
+                        report.status === 'ESCALATED'
+                          ? 'text-[#EF4444]'
+                          : report.status === 'IN_PROGRESS' || report.status === 'RESOLVED'
+                          ? 'text-[#256BF5]'
+                          : 'text-slate-400'
+                      }
+                    >
+                      {report.status === 'ESCALATED' ? '3. Escalated' : '3. Work Started'}
+                    </span>
                   </div>
 
+                  {/* Step 4: Resolution Evidence Uploaded */}
+                  <div className="space-y-1.5">
+                    <div
+                      className={`w-full h-2 rounded-full ${
+                        report.resolution_photo_url || report.status === 'RESOLVED'
+                          ? 'bg-[#256BF5]'
+                          : 'bg-slate-200'
+                      }`}
+                    ></div>
+                    <span
+                      className={
+                        report.resolution_photo_url || report.status === 'RESOLVED'
+                          ? 'text-[#256BF5]'
+                          : 'text-slate-400'
+                      }
+                    >
+                      4. Evidence Uploaded
+                    </span>
+                  </div>
+
+                  {/* Step 5: Resolved */}
+                  <div className="space-y-1.5">
+                    <div
+                      className={`w-full h-2 rounded-full ${
+                        report.status === 'RESOLVED' ? 'bg-[#10B981]' : 'bg-slate-200'
+                      }`}
+                    ></div>
+                    <span
+                      className={
+                        report.status === 'RESOLVED' ? 'text-[#10B981]' : 'text-slate-400'
+                      }
+                    >
+                      5. Resolved
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -231,7 +279,7 @@ export const MyReports: React.FC<MyReportsProps> = ({ reports }) => {
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between text-[11px] font-black text-slate-700">
                         <span className="flex items-center gap-1 text-red-600">
-                          <span>⚠️</span> Before: Reported Blockage
+                          <span>⚠️</span> BEFORE: Blocked drain
                         </span>
                         <span className="text-slate-400 font-mono text-[10px]">
                           {new Date(report.created_at).toLocaleDateString()}
@@ -251,7 +299,7 @@ export const MyReports: React.FC<MyReportsProps> = ({ reports }) => {
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between text-[11px] font-black text-emerald-800">
                         <span className="flex items-center gap-1 text-emerald-700">
-                          <span>✓</span> After: Cleared Drain Evidence
+                          <span>✓</span> AFTER: Cleared drain
                         </span>
                         {report.resolved_at && (
                           <span className="text-emerald-600 font-mono text-[10px]">
@@ -270,6 +318,26 @@ export const MyReports: React.FC<MyReportsProps> = ({ reports }) => {
                     </div>
                   </div>
 
+                  {/* AI Resolution Comparison Result */}
+                  <div className="p-3.5 rounded-2xl bg-white border border-emerald-200 space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-black text-emerald-950 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-[#256BF5]" />
+                        <span>AI-Assisted Resolution Comparison:</span>
+                      </span>
+                      <span className="px-2 py-0.5 rounded-lg bg-blue-50 text-[#256BF5] font-black text-[10px] border border-blue-100">
+                        AI-assisted prototype verification
+                      </span>
+                    </div>
+                    <p className="text-slate-800 font-bold text-xs">
+                      &quot;{report.resolution_ai_verification?.comparison_result || 'Obstruction appears reduced/removed.'}&quot;
+                    </p>
+                    <p className="text-slate-500 text-[10px]">
+                      {report.resolution_ai_verification?.disclaimer ||
+                        'Visual prototype comparison — Does not definitively prove complete sub-surface hydraulic flow.'}
+                    </p>
+                  </div>
+
                   {/* Resolution Notes & Crew Footer */}
                   <div className="p-3.5 rounded-2xl bg-white border border-emerald-200 flex flex-wrap items-center justify-between gap-3 text-xs">
                     <div className="space-y-0.5">
@@ -278,18 +346,22 @@ export const MyReports: React.FC<MyReportsProps> = ({ reports }) => {
                         <span>Resolution Notes:</span>
                       </p>
                       <p className="text-slate-600 font-medium text-[11px]">
-                        {report.resolution_notes || 'Drain cleared, desilted, and water flow successfully restored by rapid action team.'}
+                        {report.resolution_notes ||
+                          'Drain cleared, desilted, and water flow successfully restored by rapid action team.'}
                       </p>
                     </div>
 
                     {report.assigned_crew && (
                       <div className="text-right">
-                        <span className="text-[10px] text-slate-400 font-bold block">Executing Unit:</span>
-                        <span className="text-emerald-700 font-black text-[11px]">{report.assigned_crew}</span>
+                        <span className="text-[10px] text-slate-400 font-bold block">
+                          Executing Unit:
+                        </span>
+                        <span className="text-emerald-700 font-black text-[11px]">
+                          {report.assigned_crew}
+                        </span>
                       </div>
                     )}
                   </div>
-
                 </div>
               )}
 

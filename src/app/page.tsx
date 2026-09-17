@@ -64,10 +64,7 @@ function NiraMainApp() {
     setReports(prev => {
       const updated = prev.map(r => (r.id === updatedReport.id ? updatedReport : r));
       const dynamicClusters = niraService.detectDynamicHotspots(updated);
-      setHotspots(prevHotspots => {
-        const staticHotspots = prevHotspots.filter(h => !h.id.startsWith('dyn-'));
-        return [...staticHotspots, ...dynamicClusters];
-      });
+      setHotspots(dynamicClusters);
       return updated;
     });
   };

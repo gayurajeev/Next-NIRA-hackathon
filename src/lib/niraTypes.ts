@@ -45,6 +45,19 @@ export interface DrainageReport {
   resolution_notes?: string;
   internal_notes?: string[];
   ai_confidence?: number;
+  resolution_ai_verification?: ResolutionAiVerification;
+}
+
+export interface ResolutionAiVerification {
+  comparison_result: string;
+  visual_clearing_index: number;
+  obstruction_removed: boolean;
+  water_flow_restored: boolean;
+  timestamp: string;
+  factors: string[];
+  disclaimer: string;
+  override_applied?: boolean;
+  override_reason?: string;
 }
 
 export interface HotspotCluster {

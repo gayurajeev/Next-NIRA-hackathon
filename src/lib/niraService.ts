@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import { INITIAL_NIRA_REPORTS, INITIAL_HOTSPOT_CLUSTERS, KOCHI_WARDS } from './niraMockData';
-import { DrainageReport, HotspotCluster, WardInfo, ReportStatus, SeverityLevel, DrainageIssueType } from './niraTypes';
+import { DrainageReport, HotspotCluster, WardInfo, ReportStatus, SeverityLevel, DrainageIssueType, ResolutionAiVerification } from './niraTypes';
 
 import { kmcWardService, WardLookupResult } from './kmcWardService';
 import {
@@ -104,24 +104,50 @@ export function calculatePriorityScore(
 }
 
 /**
- * Dynamic Hotspot Detection: Groups multiple nearby active reports within 400m
+ * Dynamic Hotspot Detection: Groups multiple nearby active unresolved reports within 400m
+ * Automatically recalculates unresolved report counts when tickets are resolved.
  */
 export function detectDynamicHotspots(reports: DrainageReport[]): HotspotCluster[] {
-  const clusters: HotspotCluster[] = [...INITIAL_HOTSPOT_CLUSTERS];
+  // Only UNRESOLVED reports contribute to active acute hotspot risk
+  const unresolvedReports = reports.filter(r => r.status !== 'RESOLVED');
 
   const byWard: Record<string, DrainageReport[]> = {};
-  reports.forEach(r => {
+  unresolvedReports.forEach(r => {
     byWard[r.ward] = byWard[r.ward] || [];
     byWard[r.ward].push(r);
   });
 
+  const clusters: HotspotCluster[] = [];
+
+  // Update baseline clusters based on currently unresolved reports
+  INITIAL_HOTSPOT_CLUSTERS.forEach(baseCluster => {
+    const wardActiveReports = unresolvedReports.filter(
+      r => r.ward.toLowerCase().includes(baseCluster.ward.toLowerCase()) || baseCluster.ward.toLowerCase().includes(r.ward.toLowerCase())
+    );
+
+    clusters.push({
+      ...baseCluster,
+      report_count: wardActiveReports.length,
+      risk_level:
+        wardActiveReports.length >= 4
+          ? 'CRITICAL'
+          : wardActiveReports.length >= 2
+          ? 'HIGH'
+          : 'MODERATE',
+      last_reported:
+        wardActiveReports.length > 0
+          ? `${wardActiveReports.length} Unresolved Blockages Active`
+          : 'All Recurrent Incidents Cleared',
+    });
+  });
+
+  // Dynamic clusters for other wards with >= 2 active unresolved reports
   Object.entries(byWard).forEach(([wardName, wardReports]) => {
-    if (wardReports.length >= 2) {
+    if (wardReports.length >= 2 && !clusters.some(c => c.ward === wardName)) {
       const avgLat = wardReports.reduce((sum, r) => sum + r.lat, 0) / wardReports.length;
       const avgLng = wardReports.reduce((sum, r) => sum + r.lng, 0) / wardReports.length;
-      const existingIdx = clusters.findIndex(c => c.ward === wardName);
 
-      const clusterObj: HotspotCluster = {
+      clusters.push({
         id: `dyn-hs-${wardReports[0].ward_number}`,
         ward: wardName,
         ward_number: wardReports[0].ward_number,
@@ -130,14 +156,8 @@ export function detectDynamicHotspots(reports: DrainageReport[]): HotspotCluster
         center_lat: avgLat,
         center_lng: avgLng,
         location_name: `${wardName.split('-')[1]?.trim() || wardName} Recurrent Cluster`,
-        last_reported: 'Active (Live Calculated)',
-      };
-
-      if (existingIdx >= 0) {
-        clusters[existingIdx] = clusterObj;
-      } else {
-        clusters.push(clusterObj);
-      }
+        last_reported: `${wardReports.length} Active Unresolved`,
+      });
     }
   });
 
@@ -245,6 +265,7 @@ export const niraService = {
       severity?: SeverityLevel;
       internalNotes?: string[];
       internalNote?: string;
+      resolutionAiVerification?: ResolutionAiVerification;
     }
   ): Promise<Partial<DrainageReport>> {
     const now = new Date().toISOString();
@@ -256,6 +277,7 @@ export const niraService = {
       ...(options?.assignedOfficer ? { assigned_officer: options.assignedOfficer } : {}),
       ...(options?.resolutionPhotoUrl ? { resolution_photo_url: options.resolutionPhotoUrl } : {}),
       ...(options?.resolutionNotes ? { resolution_notes: options.resolutionNotes } : {}),
+      ...(options?.resolutionAiVerification ? { resolution_ai_verification: options.resolutionAiVerification } : {}),
       ...(options?.priorityScore !== undefined ? { priority_score: options.priorityScore } : {}),
       ...(options?.severity ? { severity: options.severity } : {}),
       ...(options?.internalNotes ? { internal_notes: options.internalNotes } : {}),

@@ -37,3 +37,16 @@ CREATE TABLE IF NOT EXISTS hotspot_clusters (
     last_reported VARCHAR(50),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- ================================================
+-- CLOSED-LOOP RESOLUTION & AI VERIFICATION SCHEMA
+-- ================================================
+ALTER TABLE drainage_reports ADD COLUMN IF NOT EXISTS assigned_crew VARCHAR(150);
+ALTER TABLE drainage_reports ADD COLUMN IF NOT EXISTS resolution_photo_url TEXT;
+ALTER TABLE drainage_reports ADD COLUMN IF NOT EXISTS resolution_notes TEXT;
+ALTER TABLE drainage_reports ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE drainage_reports ADD COLUMN IF NOT EXISTS sla_hours INT DEFAULT 6;
+ALTER TABLE drainage_reports ADD COLUMN IF NOT EXISTS priority_explanation TEXT;
+ALTER TABLE drainage_reports ADD COLUMN IF NOT EXISTS ai_confidence INT DEFAULT 94;
+ALTER TABLE drainage_reports ADD COLUMN IF NOT EXISTS internal_notes JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE drainage_reports ADD COLUMN IF NOT EXISTS resolution_ai_verification JSONB;
