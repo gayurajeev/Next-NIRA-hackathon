@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { DrainageReport, DrainageIssueType, SeverityLevel } from '@/lib/niraTypes';
-import { calculatePriorityScore, identifyKochiWard, niraService } from '@/lib/niraService';
+import { calculatePriorityScore, niraService } from '@/lib/niraService';
+import { kmcWardService, WardLookupResult } from '@/lib/kmcWardService';
 import { useAuth } from '@/lib/authContext';
 import { LiveMap } from '@/components/LiveMap';
-import { Camera, MapPin, AlertTriangle, Sparkles, Send, CheckCircle2, UploadCloud, Cpu, Image as ImageIcon, Crosshair, Clock, ShieldCheck } from 'lucide-react';
+import { Camera, MapPin, AlertTriangle, Sparkles, Send, CheckCircle2, UploadCloud, Cpu, Image as ImageIcon, Crosshair, Clock, ShieldCheck, Loader2, Building2 } from 'lucide-react';
 
 interface CitizenReportProps {
   onReportCreated: (report: DrainageReport) => void;
@@ -43,17 +44,21 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
   const [photoUrl, setPhotoUrl] = useState<string>(SAMPLE_PHOTOS[0].url);
   const [issueType, setIssueType] = useState<DrainageIssueType>('BLOCKED_STORM_DRAIN');
   const [severity, setSeverity] = useState<SeverityLevel>('HIGH');
-  const [ward, setWard] = useState<string>('Ward 24 - Vyttila Mobility Hub Junction');
-  const [wardNumber, setWardNumber] = useState<number>(24);
-  const [landmark, setLandmark] = useState<string>('Opposite Metro Pillar 842, SA Road');
+  const [ward, setWard] = useState<string>('Vyttila');
+  const [wardNumber, setWardNumber] = useState<number>(40);
+  const [landmark, setLandmark] = useState<string>('Vyttila Mobility Hub');
   const [description, setDescription] = useState<string>('Storm drain heavily blocked with plastic waste and mud. Water overflowing onto pedestrian walkway.');
   const [reporterName, setReporterName] = useState<string>(user?.name || '');
   const [reporterPhone, setReporterPhone] = useState<string>('');
   const [selectedCoords, setSelectedCoords] = useState<{ lat: number; lng: number }>({
     lat: 9.9674,
-    lng: 76.2998,
+    lng: 76.3160,
   });
   const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
+  const [locationMethod, setLocationMethod] = useState<'GPS_AUTO' | 'MAP_MANUAL'>('GPS_AUTO');
+  const [wardLookupResult, setWardLookupResult] = useState<WardLookupResult | null>(null);
+  const [isIdentifyingWard, setIsIdentifyingWard] = useState<boolean>(false);
+  const [wardLookupError, setWardLookupError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -66,18 +71,43 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
     }
   }, [user, reporterName]);
 
+  // Automatic initial ward determination on component mount
+  useEffect(() => {
+    handleLocationUpdate(9.9674, 76.3160, undefined, false);
+  }, []);
+
   // Live priority score and mathematical breakdown
   const priorityData = calculatePriorityScore(issueType, severity, true);
 
-  // Automatic ward and landmark detection whenever coordinates update
-  const handleLocationUpdate = (lat: number, lng: number, acc?: number) => {
+  // Reusable ward boundary lookup handler invoked on GPS or map click
+  const handleLocationUpdate = async (lat: number, lng: number, acc?: number, isManual?: boolean) => {
     setSelectedCoords({ lat, lng });
-    if (acc) setLocationAccuracy(acc);
+    if (acc !== undefined) setLocationAccuracy(acc);
+    if (typeof isManual === 'boolean') {
+      setLocationMethod(isManual ? 'MAP_MANUAL' : 'GPS_AUTO');
+    }
 
-    const identified = identifyKochiWard(lat, lng);
-    setWard(identified.ward);
-    setWardNumber(identified.wardNumber);
-    setLandmark(identified.suggestedLandmark);
+    setIsIdentifyingWard(true);
+    setWardLookupError(null);
+
+    try {
+      const result = await kmcWardService.lookupWard(lat, lng);
+      if (result.identified) {
+        setWardLookupResult(result);
+        setWard(result.wardName);
+        setWardNumber(result.wardNumber);
+        setLandmark(result.suggestedLandmark);
+        setWardLookupError(null);
+      } else {
+        setWardLookupResult(null);
+        setWardLookupError('Unable to identify ward automatically. Please select the location on the map.');
+      }
+    } catch {
+      setWardLookupResult(null);
+      setWardLookupError('Unable to identify ward automatically. Please select the location on the map.');
+    } finally {
+      setIsIdentifyingWard(false);
+    }
   };
 
   const handlePhotoSelect = (sample: typeof SAMPLE_PHOTOS[0]) => {
@@ -124,6 +154,9 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
         severity: severity,
         ward: ward,
         ward_number: wardNumber,
+        authority: wardLookupResult?.authority || 'Kochi Municipal Corporation (KMC)',
+        selection_method: locationMethod,
+        detection_method: wardLookupResult?.detectionMethod || 'POLYGON_CONTAINMENT',
         landmark: landmark,
         description: description,
         reporter_name: reporterName,
@@ -297,81 +330,43 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
 
           {/* RIGHT COLUMN: REPORT DETAILS & FORM */}
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-5">
-            <h3 className="text-lg font-black text-slate-900 pb-3 border-b border-slate-100">
-              2. Location & Issue Details
-            </h3>
-
-            {/* Issue Category */}
-            <div>
-              <label className="block text-xs font-black text-slate-700 mb-1.5">Issue Classification</label>
-              <select
-                value={issueType}
-                onChange={e => setIssueType(e.target.value as DrainageIssueType)}
-                className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#256BF5] focus:bg-white transition-all"
-              >
-                <option value="BLOCKED_STORM_DRAIN">Blocked Storm Drain (Severe Clogging)</option>
-                <option value="SILT_ACCUMULATION">Silt & Mud Accumulation</option>
-                <option value="BROKEN_CULVERT">Broken Culvert / Slab Structure</option>
-                <option value="GARBAGE_DUMPING">Illegal Garbage Dumping in Drain</option>
-                <option value="SEWAGE_OVERFLOW">Sewage / Foul Water Overflow</option>
-              </select>
-            </div>
-
-            {/* Ward Selector */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-black text-slate-700 mb-1.5">Responsible Ward</label>
-                <select
-                  value={ward}
-                  onChange={e => {
-                    setWard(e.target.value);
-                    const match = e.target.value.match(/\d+/);
-                    if (match) setWardNumber(Number(match[0]));
-                  }}
-                  className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#256BF5]"
-                >
-                  <option value="Ward 24 - Vyttila Mobility Hub Junction">Ward 24 - Vyttila Hub</option>
-                  <option value="Ward 35 - Kadavanthra Canal Road">Ward 35 - Kadavanthra</option>
-                  <option value="Ward 12 - Fort Kochi Heritage Trench">Ward 12 - Fort Kochi</option>
-                  <option value="Ward 40 - Edappally Toll Canal">Ward 40 - Edappally</option>
-                  <option value="Ward 28 - Kaloor Subhash Bose Road">Ward 28 - Kaloor</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-black text-slate-700 mb-1.5">Severity</label>
-                <select
-                  value={severity}
-                  onChange={e => setSeverity(e.target.value as SeverityLevel)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#256BF5]"
-                >
-                  <option value="CRITICAL">Critical (Road Flooding)</option>
-                  <option value="HIGH">High Impact</option>
-                  <option value="MEDIUM">Medium</option>
-                  <option value="LOW">Low</option>
-                </select>
-              </div>
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="text-lg font-black text-slate-900">
+                2. Location & Ward Identification
+              </h3>
+              <span className="text-[10px] font-mono text-slate-400 font-bold">
+                SC-08 Boundary Engine
+              </span>
             </div>
 
             {/* INTERACTIVE SATELLITE MAP LOCATION PICKER */}
-            <div className="space-y-2 pt-1">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="block text-xs font-black text-slate-800 flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-[#EF4444]" /> Pin Exact Location on Satellite Map
+                  <MapPin className="w-3.5 h-3.5 text-[#EF4444]" /> Pinpoint Blocked Drain on Satellite Map
                 </label>
-                <span className="text-[10px] font-mono font-black text-[#256BF5] bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-lg">
-                  {selectedCoords.lat.toFixed(5)}° N, {selectedCoords.lng.toFixed(5)}° E
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black ${
+                    locationMethod === 'GPS_AUTO'
+                      ? 'bg-blue-100 text-[#256BF5]'
+                      : 'bg-amber-100 text-amber-800'
+                  }`}>
+                    {locationMethod === 'GPS_AUTO' ? '📍 Live GPS Active' : '🗺 Manually Selected Pin'}
+                  </span>
+                  <span className="text-[10px] font-mono font-black text-[#256BF5] bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-lg">
+                    {selectedCoords.lat.toFixed(5)}° N, {selectedCoords.lng.toFixed(5)}° E
+                  </span>
+                </div>
               </div>
 
               <p className="text-[11px] text-slate-500 font-medium">
-                Continuous live browser GPS. Click anywhere on the satellite view to pinpoint the blocked storm drain.
+                Live browser GPS auto-detects your location. If location permission is unavailable or inaccurate, click anywhere on the satellite view to place the marker manually.
               </p>
 
               {/* REUSABLE LIVEMAP IN PICKER MODE */}
               <LiveMap
                 mode="picker"
-                height="280px"
+                height="260px"
                 selectedLocation={selectedCoords}
                 onLocationSelect={handleLocationUpdate}
                 showReports={false}
@@ -385,25 +380,131 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                     GPS Accuracy: ±{Math.round(locationAccuracy)} meters
                   </span>
                   {locationAccuracy > 50 && (
-                    <span className="text-amber-600">GPS accuracy is low. You can adjust the pin manually.</span>
+                    <span className="text-amber-600">Low accuracy. You can click on the map to pin your exact location.</span>
                   )}
                 </div>
               )}
             </div>
 
-            {/* Landmark */}
+            {/* AUTOMATIC WARD IDENTIFICATION RESULT CARD (Requirements 2, 3, 4, 11, 12, 13) */}
             <div>
-              <label className="block text-xs font-black text-slate-700 mb-1.5">Landmark / Location Address</label>
+              {isIdentifyingWard ? (
+                /* 11. LOADING STATE */
+                <div className="p-4 rounded-2xl bg-blue-50/90 border-2 border-dashed border-blue-300 flex items-center gap-3 animate-pulse">
+                  <Loader2 className="w-5 h-5 text-[#256BF5] animate-spin flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-black text-[#256BF5]">Identifying municipal ward...</p>
+                    <p className="text-[10px] text-slate-500 font-medium">
+                      Performing Point-in-Polygon boundary lookup against Kochi Municipal Corporation dataset...
+                    </p>
+                  </div>
+                </div>
+              ) : wardLookupError ? (
+                /* 12. ERROR / FALLBACK STATE */
+                <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-950 space-y-1.5">
+                  <div className="flex items-center gap-2 font-black text-xs text-amber-800">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                    <span>Unable to identify ward automatically. Please select the location on the map.</span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
+                    The chosen coordinate falls outside the configured Kochi Municipal Corporation prototype boundary dataset. Please click or drag within Kochi Corporation limits on the satellite map.
+                  </p>
+                </div>
+              ) : wardLookupResult ? (
+                /* 4. LOCATION IDENTIFIED RESULT CARD */
+                <div className="p-5 rounded-3xl bg-slate-50/80 border-2 border-blue-200 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-200/80 pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      <span className="text-[11px] font-black uppercase tracking-wider text-[#256BF5]">
+                        Location Identified
+                      </span>
+                    </div>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${
+                      locationMethod === 'GPS_AUTO'
+                        ? 'bg-blue-100 text-[#256BF5]'
+                        : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {locationMethod === 'GPS_AUTO' ? '📍 Live GPS' : '🗺 Manually Selected'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="p-3 rounded-2xl bg-white border border-slate-200 shadow-xs">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Ward</span>
+                      <span className="text-base font-black text-slate-900">{wardLookupResult.wardName}</span>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-white border border-slate-200 shadow-xs">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Ward Number</span>
+                      <span className="text-base font-black text-[#256BF5] font-mono">Ward #{wardLookupResult.wardNumber}</span>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-white border border-slate-200 shadow-xs">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Authority</span>
+                      <span className="text-xs font-black text-emerald-800 line-clamp-2">{wardLookupResult.authority}</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                    <div className="flex items-center gap-1.5 text-slate-700 font-bold">
+                      <ShieldCheck className="w-3.5 h-3.5 text-[#256BF5]" />
+                      <span>Assigned: <strong>{wardLookupResult.officerInCharge}</strong> ({wardLookupResult.officerRole})</span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-medium">
+                      KMC Prototype GIS Dataset ({wardLookupResult.detectionMethod === 'POLYGON_CONTAINMENT' ? 'Polygon Boundary' : 'Corridor Proximity'})
+                    </span>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            {/* Issue Category & Severity */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-black text-slate-700 mb-1.5">Issue Classification</label>
+                <select
+                  value={issueType}
+                  onChange={e => setIssueType(e.target.value as DrainageIssueType)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#256BF5]"
+                >
+                  <option value="BLOCKED_STORM_DRAIN">Blocked Storm Drain (Severe Clogging)</option>
+                  <option value="SILT_ACCUMULATION">Silt & Mud Accumulation</option>
+                  <option value="BROKEN_CULVERT">Broken Culvert / Slab Structure</option>
+                  <option value="GARBAGE_DUMPING">Illegal Garbage Dumping in Drain</option>
+                  <option value="SEWAGE_OVERFLOW">Sewage / Foul Water Overflow</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-black text-slate-700 mb-1.5">Severity</label>
+                <select
+                  value={severity}
+                  onChange={e => setSeverity(e.target.value as SeverityLevel)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#256BF5]"
+                >
+                  <option value="CRITICAL">Critical (Road Flooding)</option>
+                  <option value="HIGH">High Impact</option>
+                  <option value="MEDIUM">Medium</option>
+                  <option value="LOW">Low</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Landmark (Pre-populated from auto-detected ward) */}
+            <div>
+              <label className="block text-xs font-black text-slate-700 mb-1.5">Landmark / Street Address</label>
               <input
                 type="text"
                 required
                 value={landmark}
                 onChange={e => setLandmark(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#256BF5] focus:bg-white"
+                placeholder="e.g. Near Metro Pillar 842, SA Road"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#256BF5] focus:bg-white"
               />
             </div>
 
-            {/* Description */}
+            {/* Problem Description */}
             <div>
               <label className="block text-xs font-black text-slate-700 mb-1.5">Problem Description</label>
               <textarea
@@ -411,7 +512,7 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                 required
                 value={description}
                 onChange={e => setDescription(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#256BF5] focus:bg-white"
+                className="w-full px-4 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#256BF5] focus:bg-white"
               />
             </div>
 
@@ -425,7 +526,7 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                   placeholder="e.g. Rahul Nair"
                   value={reporterName}
                   onChange={e => setReporterName(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#256BF5]"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#256BF5]"
                 />
               </div>
 
@@ -437,7 +538,7 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                   placeholder="+91 98470 12345"
                   value={reporterPhone}
                   onChange={e => setReporterPhone(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#256BF5]"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#256BF5]"
                 />
               </div>
             </div>
@@ -460,7 +561,7 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
 
         </form>
       ) : (
-        /* SUCCESSFUL TICKET CONFIRMATION CARD */
+        /* SUCCESSFUL TICKET CONFIRMATION CARD (Requirement 10) */
         <div className="bg-white rounded-3xl p-8 border border-blue-100 text-center space-y-6 max-w-xl mx-auto shadow-lg">
           <div className="inline-flex p-4 rounded-full bg-emerald-100 text-[#10B981]">
             <CheckCircle2 className="w-12 h-12 animate-bounce" />
@@ -469,7 +570,7 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
           <div>
             <h3 className="text-2xl font-black text-slate-900">Drainage Ticket Created!</h3>
             <p className="text-xs text-slate-500 font-medium mt-1">
-              Ticket code assigned and routed to Ward {submittedReport.ward_number} Officer. Photo saved to Supabase 'storage'.
+              Ticket code assigned and routed to {submittedReport.ward} (Ward #{submittedReport.ward_number}) Officer. Photo saved to Supabase 'storage'.
             </p>
           </div>
 
@@ -479,8 +580,22 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
               <strong className="text-[#256BF5] font-black">{submittedReport.ticket_code}</strong>
             </div>
             <div className="flex justify-between border-b border-blue-200 pb-2">
-              <span className="text-slate-600 font-sans font-bold">Assigned Ward</span>
-              <span className="text-slate-900 font-sans font-bold">{submittedReport.ward}</span>
+              <span className="text-slate-600 font-sans font-bold">Ward Identified</span>
+              <span className="text-slate-900 font-sans font-bold">{submittedReport.ward} (Ward #{submittedReport.ward_number})</span>
+            </div>
+            <div className="flex justify-between border-b border-blue-200 pb-2">
+              <span className="text-slate-600 font-sans font-bold">Authority</span>
+              <span className="text-emerald-800 font-sans font-bold">{submittedReport.authority || 'Kochi Municipal Corporation (KMC)'}</span>
+            </div>
+            <div className="flex justify-between border-b border-blue-200 pb-2">
+              <span className="text-slate-600 font-sans font-bold">Location Method</span>
+              <span className="text-slate-900 font-sans font-bold">
+                {submittedReport.selection_method === 'GPS_AUTO' ? '📍 Live GPS Captured' : '🗺 Manually Selected Pin'}
+              </span>
+            </div>
+            <div className="flex justify-between border-b border-blue-200 pb-2">
+              <span className="text-slate-600 font-sans font-bold">Assigned Officer</span>
+              <span className="text-slate-900 font-sans font-bold">{submittedReport.assigned_officer}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-600 font-sans font-bold">Priority Score</span>

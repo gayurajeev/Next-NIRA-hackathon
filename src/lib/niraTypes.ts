@@ -22,6 +22,9 @@ export interface DrainageReport {
   severity: SeverityLevel;
   ward: string;
   ward_number: number;
+  authority?: string;
+  selection_method?: 'GPS_AUTO' | 'MAP_MANUAL';
+  detection_method?: 'POLYGON_CONTAINMENT' | 'PROXIMITY_CENTROID' | 'OUT_OF_BOUNDS';
   priority_score: number; // 0 to 100
   priority_explanation?: string;
   sla_hours?: number;

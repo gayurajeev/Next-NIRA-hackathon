@@ -2,6 +2,8 @@ import { supabase } from './supabase';
 import { INITIAL_NIRA_REPORTS, INITIAL_HOTSPOT_CLUSTERS, KOCHI_WARDS } from './niraMockData';
 import { DrainageReport, HotspotCluster, WardInfo, ReportStatus, SeverityLevel, DrainageIssueType } from './niraTypes';
 
+import { kmcWardService, WardLookupResult } from './kmcWardService';
+
 export interface PriorityBreakdown {
   baseScore: number;
   issueWeight: number;
@@ -16,63 +18,44 @@ export interface PriorityScoreResult {
   explanation: string;
 }
 
-/**
- * Automatically maps GPS coordinates to responsible Kochi Municipal Corporation wards
- */
-export function identifyKochiWard(lat: number, lng: number): {
+export interface WardIdentificationOutput {
   ward: string;
   wardNumber: number;
+  authority: string;
+  zone: string;
+  division: string;
   suggestedLandmark: string;
   officerInCharge: string;
+  officerRole: string;
   officerPhone: string;
-} {
-  // Fort Kochi region (West side, lng < 76.27)
-  if (lng < 76.27) {
-    return {
-      ward: 'Ward 12 - Fort Kochi Heritage Trench',
-      wardNumber: 12,
-      suggestedLandmark: 'Near Bastion Street & Heritage Trench Canal',
-      officerInCharge: 'Anitha Roy (Junior Engineer)',
-      officerPhone: '+91 98952 12012',
-    };
-  }
-  // Edappally region (North side, lat >= 10.01)
-  if (lat >= 10.01) {
-    return {
-      ward: 'Ward 40 - Edappally Toll Canal',
-      wardNumber: 40,
-      suggestedLandmark: 'Opposite Edappally Metro Station / Toll Gate',
-      officerInCharge: 'P. V. Haridas (Assistant Executive Engineer)',
-      officerPhone: '+91 97455 40040',
-    };
-  }
-  // Kaloor region (lat between 9.98 and 10.01)
-  if (lat >= 9.98) {
-    return {
-      ward: 'Ward 28 - Kaloor Subhash Bose Road',
-      wardNumber: 28,
-      suggestedLandmark: 'Near JLN International Stadium Metro Pillar 520',
-      officerInCharge: 'T. K. Salim (Sanitation Inspector)',
-      officerPhone: '+91 98460 28028',
-    };
-  }
-  // Vyttila corridor (East / South-East side, lng >= 76.302 or lat >= 9.965)
-  if (lng >= 76.302 || lat >= 9.965) {
-    return {
-      ward: 'Ward 24 - Vyttila Mobility Hub Junction',
-      wardNumber: 24,
-      suggestedLandmark: 'Opposite Metro Pillar 842, SA Road',
-      officerInCharge: 'K. S. Rajesh (AE Drainage)',
-      officerPhone: '+91 98471 20024',
-    };
-  }
-  // Kadavanthra (Central South, lng between 76.27 and 76.302)
+  primaryCanalSystem: string;
+  detectionMethod: 'POLYGON_CONTAINMENT' | 'PROXIMITY_CENTROID' | 'OUT_OF_BOUNDS';
+  isPrototypeBoundary: boolean;
+  message: string;
+  identified: boolean;
+}
+
+/**
+ * Automatically maps GPS or manual coordinates to responsible Kochi Municipal Corporation wards
+ * Uses the reusable Point-in-Polygon (PIP) kmcWardService engine.
+ */
+export function identifyKochiWard(lat: number, lng: number): WardIdentificationOutput {
+  const result: WardLookupResult = kmcWardService.lookupWardSync(lat, lng);
   return {
-    ward: 'Ward 35 - Kadavanthra Canal Road',
-    wardNumber: 35,
-    suggestedLandmark: 'Kadavanthra Junction near Chilavannoor canal outlet',
-    officerInCharge: 'M. Somanathan (Overseer)',
-    officerPhone: '+91 94470 35035',
+    ward: result.wardName,
+    wardNumber: result.wardNumber,
+    authority: result.authority,
+    zone: result.zone,
+    division: result.division,
+    suggestedLandmark: result.suggestedLandmark,
+    officerInCharge: result.officerInCharge,
+    officerRole: result.officerRole,
+    officerPhone: result.officerPhone,
+    primaryCanalSystem: result.primaryCanalSystem,
+    detectionMethod: result.detectionMethod,
+    isPrototypeBoundary: result.isPrototypeBoundary,
+    message: result.message,
+    identified: result.identified,
   };
 }
 
@@ -233,6 +216,9 @@ export const niraService = {
       severity: report.severity || 'HIGH',
       ward: wardName,
       ward_number: wardNum,
+      authority: report.authority || identified.authority,
+      selection_method: report.selection_method || 'GPS_AUTO',
+      detection_method: identified.detectionMethod,
       priority_score: priorityResult.score,
       priority_explanation: priorityResult.explanation,
       sla_hours: priorityResult.slaHours,

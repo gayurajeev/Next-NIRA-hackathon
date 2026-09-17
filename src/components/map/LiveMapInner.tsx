@@ -22,7 +22,7 @@ export interface LiveMapProps {
   reports?: DrainageReport[];
   hotspots?: HotspotCluster[];
   selectedLocation?: { lat: number; lng: number } | null;
-  onLocationSelect?: (lat: number, lng: number, accuracy?: number) => void;
+  onLocationSelect?: (lat: number, lng: number, accuracy?: number, isManual?: boolean) => void;
   initialCenter?: [number, number];
   initialZoom?: number;
   height?: string;
@@ -254,7 +254,7 @@ export default function LiveMapInner({
         // If in picker mode and no selection exists yet, suggest user's location
         if (mode === 'picker' && !clickedCoords && onLocationSelect) {
           setClickedCoords({ lat: latitude, lng: longitude });
-          onLocationSelect(latitude, longitude, accuracy);
+          onLocationSelect(latitude, longitude, accuracy, false);
         }
       }
     };
@@ -296,7 +296,7 @@ export default function LiveMapInner({
       if (mode === 'picker') {
         setClickedCoords({ lat: userCoords.lat, lng: userCoords.lng });
         if (onLocationSelect) {
-          onLocationSelect(userCoords.lat, userCoords.lng, userCoords.accuracy);
+          onLocationSelect(userCoords.lat, userCoords.lng, userCoords.accuracy, false);
         }
       }
     } else if (navigator.geolocation) {
@@ -308,7 +308,7 @@ export default function LiveMapInner({
           if (mode === 'picker') {
             setClickedCoords({ lat: latitude, lng: longitude });
             if (onLocationSelect) {
-              onLocationSelect(latitude, longitude, accuracy);
+              onLocationSelect(latitude, longitude, accuracy, false);
             }
           }
         },
@@ -325,7 +325,7 @@ export default function LiveMapInner({
     if (mode !== 'picker') return;
     setClickedCoords({ lat, lng });
     if (onLocationSelect) {
-      onLocationSelect(lat, lng);
+      onLocationSelect(lat, lng, undefined, true);
     }
   };
 
@@ -577,7 +577,8 @@ export default function LiveMapInner({
                       </span>
                     </div>
                     <h4 className="text-xs font-black text-slate-900 mt-0.5">{rep.issue_type.replace(/_/g, ' ')}</h4>
-                    <p className="text-[10px] text-slate-500 font-medium">{rep.ward} • {rep.landmark}</p>
+                    <p className="text-[10px] text-slate-800 font-bold">Ward {rep.ward_number} ({rep.ward}) • <span className="text-emerald-700">{rep.authority || 'KMC'}</span></p>
+                    <p className="text-[10px] text-slate-500 font-medium truncate">{rep.landmark}</p>
                     {rep.assigned_crew && (
                       <p className="text-[10px] font-bold text-emerald-700 mt-0.5">
                         👷 Crew: {rep.assigned_crew}

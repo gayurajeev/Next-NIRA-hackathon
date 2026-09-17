@@ -139,7 +139,10 @@ export const PublicMap: React.FC<PublicMapProps> = ({ reports, hotspots }) => {
                   </span>
                 </div>
                 <h4 className="text-base font-black text-slate-900 mt-1">{selectedPin.issue_type.replace(/_/g, ' ')}</h4>
-                <p className="text-xs text-slate-500 font-bold mt-0.5">{selectedPin.ward}</p>
+                <div className="mt-1 space-y-0.5">
+                  <p className="text-xs text-slate-900 font-black">Ward {selectedPin.ward_number} ({selectedPin.ward})</p>
+                  <p className="text-[11px] text-emerald-800 font-bold">{selectedPin.authority || 'Kochi Municipal Corporation (KMC)'}</p>
+                </div>
               </div>
 
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
@@ -148,9 +151,21 @@ export const PublicMap: React.FC<PublicMapProps> = ({ reports, hotspots }) => {
                   <strong className="text-[#256BF5] font-black">{selectedPin.priority_score}/100</strong>
                 </div>
                 <div className="flex justify-between">
+                  <span className="text-slate-500 font-bold">Authority:</span>
+                  <span className="text-emerald-800 text-right font-black">{selectedPin.authority || 'Kochi Municipal Corporation'}</span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-slate-500 font-bold">Landmark:</span>
                   <span className="text-slate-900 text-right font-bold">{selectedPin.landmark}</span>
                 </div>
+                {selectedPin.selection_method && (
+                  <div className="flex justify-between border-t border-slate-200 pt-1.5">
+                    <span className="text-slate-500 font-bold">Capture Method:</span>
+                    <span className="text-slate-800 font-bold">
+                      {selectedPin.selection_method === 'GPS_AUTO' ? '📍 Live GPS' : '🗺 Manually Pinned'}
+                    </span>
+                  </div>
+                )}
                 {selectedPin.assigned_crew && (
                   <div className="flex justify-between border-t border-slate-200 pt-1.5">
                     <span className="text-slate-500 font-bold">Assigned Crew:</span>

@@ -86,9 +86,17 @@ export const MyReports: React.FC<MyReportsProps> = ({ reports }) => {
                       </span>
                     </div>
                     <h3 className="text-base font-black text-slate-900 mt-1">{report.issue_type.replace(/_/g, ' ')}</h3>
-                    <p className="text-xs text-slate-500 font-bold flex items-center gap-1 mt-0.5">
-                      <MapPin className="w-3.5 h-3.5 text-[#EF4444]" /> {report.ward} • {report.landmark}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-xs text-slate-600 font-bold">
+                      <span className="flex items-center gap-1 text-slate-800 font-black">
+                        <MapPin className="w-3.5 h-3.5 text-[#EF4444]" /> Ward {report.ward_number} ({report.ward})
+                      </span>
+                      <span>•</span>
+                      <span className="text-emerald-800 font-black">
+                        {report.authority || 'Kochi Municipal Corporation (KMC)'}
+                      </span>
+                      <span>•</span>
+                      <span className="text-slate-500 font-medium">{report.landmark}</span>
+                    </div>
                   </div>
                 </div>
 

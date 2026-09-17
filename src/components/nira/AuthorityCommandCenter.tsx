@@ -354,7 +354,8 @@ export const AuthorityCommandCenter: React.FC<AuthorityCommandCenterProps> = ({
                       <div className="text-[11px] text-slate-600 font-bold">{rep.issue_type.replace(/_/g, ' ')}</div>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="font-black text-slate-900">{rep.ward}</div>
+                      <div className="font-black text-slate-900">{rep.ward} (Ward #{rep.ward_number})</div>
+                      <div className="text-[10px] font-black text-emerald-800">{rep.authority || 'Kochi Municipal Corporation (KMC)'}</div>
                       <div className="text-[11px] text-slate-500 truncate max-w-[180px]">{rep.landmark}</div>
                     </td>
                     <td className="px-4 py-3">
@@ -451,7 +452,7 @@ export const AuthorityCommandCenter: React.FC<AuthorityCommandCenterProps> = ({
               </div>
               <div>
                 <h3 className="text-base font-black text-slate-900">Dispatch Rapid Action Crew</h3>
-                <p className="text-xs text-slate-500 font-mono font-bold">{crewModalReport.ticket_code} • {crewModalReport.ward}</p>
+                <p className="text-xs text-slate-500 font-bold">{crewModalReport.ticket_code} • {crewModalReport.ward} (Ward #{crewModalReport.ward_number}) • {crewModalReport.authority || 'KMC'}</p>
               </div>
             </div>
 
@@ -520,8 +521,8 @@ export const AuthorityCommandCenter: React.FC<AuthorityCommandCenterProps> = ({
               </div>
               <div>
                 <h3 className="text-lg font-black text-slate-900">Upload Resolution Evidence</h3>
-                <p className="text-xs text-slate-500 font-mono font-bold">
-                  {resolutionModalReport.ticket_code} • {resolutionModalReport.issue_type.replace(/_/g, ' ')}
+                <p className="text-xs text-slate-500 font-bold">
+                  {resolutionModalReport.ticket_code} • {resolutionModalReport.ward} (Ward #{resolutionModalReport.ward_number}) • {resolutionModalReport.authority || 'KMC'}
                 </p>
               </div>
             </div>
