@@ -75,8 +75,12 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Multi-step workflow state (1: Photo & AI, 2: Location & Ward, 3: Details & Submit)
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+  // Multi-step workflow state:
+  // Step 1: Photo Capture
+  // Step 2: Location & Ward
+  // Step 3: Issue Details
+  // Step 4: AI Diagnosis & NIRA Priority Analysis (shown only after step 3)
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
 
   const [photoUrl, setPhotoUrl] = useState<string>(SAMPLE_PHOTOS[0].url);
   const [issueType, setIssueType] = useState<DrainageIssueType>('BLOCKED_STORM_DRAIN');
@@ -254,28 +258,28 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
           </div>
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 text-[#256BF5] text-xs font-black mb-1">
-              <Sparkles className="w-3.5 h-3.5" /> Guided 3-Step Civic Report
+              <Sparkles className="w-3.5 h-3.5" /> Guided Civic Reporting Flow
             </div>
             <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900">
               Report a Drainage Blockage
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 font-medium">
-              Step-by-step guided flow: Capture photo, pinpoint ward, and create an escalated municipal ticket.
+              Submit your report in 3 quick steps, then review the automated NIRA Priority & AI Vision analysis before dispatch.
             </p>
           </div>
         </div>
       </div>
 
-      {/* STEP PROGRESS TRACKER */}
+      {/* 4-STEP PROGRESS TRACKER */}
       {!submittedReport && (
         <div className="bg-white rounded-3xl p-3 sm:p-4 border border-slate-200 shadow-sm">
-          <div className="flex items-center justify-between gap-2 max-w-2xl mx-auto">
+          <div className="flex items-center justify-between gap-1 sm:gap-2 max-w-3xl mx-auto">
             
             {/* Step 1 Pill */}
             <button
               type="button"
               onClick={() => setCurrentStep(1)}
-              className={`flex-1 flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-2xl transition-all text-left ${
+              className={`flex-1 flex items-center gap-2 sm:gap-2.5 p-2 sm:p-2.5 rounded-2xl transition-all text-left ${
                 currentStep === 1
                   ? 'bg-[#256BF5] text-white shadow-md shadow-blue-500/20'
                   : currentStep > 1
@@ -284,7 +288,7 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
               }`}
             >
               <div
-                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${
+                className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-[11px] font-black shrink-0 ${
                   currentStep === 1
                     ? 'bg-white text-[#256BF5]'
                     : currentStep > 1
@@ -292,22 +296,22 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                     : 'bg-slate-200 text-slate-500'
                 }`}
               >
-                {currentStep > 1 ? <Check className="w-4 h-4" /> : '1'}
+                {currentStep > 1 ? <Check className="w-3.5 h-3.5" /> : '1'}
               </div>
-              <div className="hidden xs:block min-w-0">
-                <span className="text-[10px] uppercase font-bold tracking-wider block opacity-75">Step 1</span>
-                <span className="text-xs font-black truncate block">Photo & AI</span>
+              <div className="hidden sm:block min-w-0">
+                <span className="text-[9px] uppercase font-bold tracking-wider block opacity-75">Step 1</span>
+                <span className="text-xs font-black truncate block">Photo</span>
               </div>
             </button>
 
             {/* Connector */}
-            <div className={`h-1 w-4 sm:w-8 rounded-full transition-colors ${currentStep >= 2 ? 'bg-[#256BF5]' : 'bg-slate-200'}`} />
+            <div className={`h-1 w-2 sm:w-6 rounded-full transition-colors ${currentStep >= 2 ? 'bg-[#256BF5]' : 'bg-slate-200'}`} />
 
             {/* Step 2 Pill */}
             <button
               type="button"
               onClick={() => setCurrentStep(2)}
-              className={`flex-1 flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-2xl transition-all text-left ${
+              className={`flex-1 flex items-center gap-2 sm:gap-2.5 p-2 sm:p-2.5 rounded-2xl transition-all text-left ${
                 currentStep === 2
                   ? 'bg-[#256BF5] text-white shadow-md shadow-blue-500/20'
                   : currentStep > 2
@@ -316,7 +320,7 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
               }`}
             >
               <div
-                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${
+                className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-[11px] font-black shrink-0 ${
                   currentStep === 2
                     ? 'bg-white text-[#256BF5]'
                     : currentStep > 2
@@ -324,39 +328,71 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                     : 'bg-slate-200 text-slate-500'
                 }`}
               >
-                {currentStep > 2 ? <Check className="w-4 h-4" /> : '2'}
+                {currentStep > 2 ? <Check className="w-3.5 h-3.5" /> : '2'}
               </div>
-              <div className="hidden xs:block min-w-0">
-                <span className="text-[10px] uppercase font-bold tracking-wider block opacity-75">Step 2</span>
-                <span className="text-xs font-black truncate block">Location & Ward</span>
+              <div className="hidden sm:block min-w-0">
+                <span className="text-[9px] uppercase font-bold tracking-wider block opacity-75">Step 2</span>
+                <span className="text-xs font-black truncate block">Location</span>
               </div>
             </button>
 
             {/* Connector */}
-            <div className={`h-1 w-4 sm:w-8 rounded-full transition-colors ${currentStep >= 3 ? 'bg-[#256BF5]' : 'bg-slate-200'}`} />
+            <div className={`h-1 w-2 sm:w-6 rounded-full transition-colors ${currentStep >= 3 ? 'bg-[#256BF5]' : 'bg-slate-200'}`} />
 
             {/* Step 3 Pill */}
             <button
               type="button"
               onClick={() => setCurrentStep(3)}
-              className={`flex-1 flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-2xl transition-all text-left ${
+              className={`flex-1 flex items-center gap-2 sm:gap-2.5 p-2 sm:p-2.5 rounded-2xl transition-all text-left ${
                 currentStep === 3
+                  ? 'bg-[#256BF5] text-white shadow-md shadow-blue-500/20'
+                  : currentStep > 3
+                  ? 'bg-blue-50 text-[#256BF5] hover:bg-blue-100'
+                  : 'bg-slate-50 text-slate-400'
+              }`}
+            >
+              <div
+                className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-[11px] font-black shrink-0 ${
+                  currentStep === 3
+                    ? 'bg-white text-[#256BF5]'
+                    : currentStep > 3
+                    ? 'bg-[#256BF5] text-white'
+                    : 'bg-slate-200 text-slate-500'
+                }`}
+              >
+                {currentStep > 3 ? <Check className="w-3.5 h-3.5" /> : '3'}
+              </div>
+              <div className="hidden sm:block min-w-0">
+                <span className="text-[9px] uppercase font-bold tracking-wider block opacity-75">Step 3</span>
+                <span className="text-xs font-black truncate block">Details</span>
+              </div>
+            </button>
+
+            {/* Connector */}
+            <div className={`h-1 w-2 sm:w-6 rounded-full transition-colors ${currentStep >= 4 ? 'bg-[#256BF5]' : 'bg-slate-200'}`} />
+
+            {/* Step 4 Pill (NIRA & AI Analysis) */}
+            <button
+              type="button"
+              onClick={() => setCurrentStep(4)}
+              className={`flex-1 flex items-center gap-2 sm:gap-2.5 p-2 sm:p-2.5 rounded-2xl transition-all text-left ${
+                currentStep === 4
                   ? 'bg-[#256BF5] text-white shadow-md shadow-blue-500/20'
                   : 'bg-slate-50 text-slate-400'
               }`}
             >
               <div
-                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${
-                  currentStep === 3
+                className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-[11px] font-black shrink-0 ${
+                  currentStep === 4
                     ? 'bg-white text-[#256BF5]'
                     : 'bg-slate-200 text-slate-500'
                 }`}
               >
-                3
+                4
               </div>
-              <div className="hidden xs:block min-w-0">
-                <span className="text-[10px] uppercase font-bold tracking-wider block opacity-75">Step 3</span>
-                <span className="text-xs font-black truncate block">Details & Submit</span>
+              <div className="hidden sm:block min-w-0">
+                <span className="text-[9px] uppercase font-bold tracking-wider block opacity-75">Step 4</span>
+                <span className="text-xs font-black truncate block">NIRA & AI</span>
               </div>
             </button>
 
@@ -368,131 +404,103 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
         <form onSubmit={handleSubmit} className="space-y-6">
 
           {/* =========================================================
-              STEP 1: DRAIN PHOTO CAPTURE & AI VISION SCAN
+              STEP 1: DRAIN PHOTO CAPTURE (NO AI CARD SHOWN HERE)
               ========================================================= */}
           {currentStep === 1 && (
-            <div className="space-y-6 animate-fadeIn">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                
-                {/* Photo Capture Box */}
-                <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-black text-slate-800 uppercase tracking-wider block">
-                        Step 1: Drain Photo Capture
-                      </span>
-                      <p className="text-[11px] text-slate-500 font-medium mt-0.5">
-                        Upload an on-site photo or choose a reference scenario.
+            <div className="space-y-6 animate-fadeIn max-w-2xl mx-auto">
+              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-5">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div>
+                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider block">
+                      Step 1: Capture Drain Photo
+                    </span>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                      Snap an on-site photo of the blocked drain or select a test scenario.
+                    </p>
+                  </div>
+                  <span className="text-[#256BF5] font-mono text-[11px] font-bold bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-xl">
+                    Bucket: storage
+                  </span>
+                </div>
+
+                {/* Image Preview Box */}
+                <div className="relative w-full h-72 sm:h-80 rounded-2xl bg-slate-50 border-2 border-dashed border-blue-200 overflow-hidden flex flex-col items-center justify-center text-center shadow-inner">
+                  <img
+                    src={photoUrl}
+                    alt="Drainage Blockage Preview"
+                    className={`w-full h-full object-cover transition-opacity duration-300 ${isUploading ? 'opacity-30' : 'opacity-100'}`}
+                  />
+
+                  {isUploading && (
+                    <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center space-y-2 z-10">
+                      <Cpu className="w-8 h-8 text-[#256BF5] animate-spin" />
+                      <p className="text-xs font-black text-[#256BF5]">
+                        Uploading photo to Supabase Storage bucket...
                       </p>
                     </div>
-                    <span className="text-[#256BF5] font-mono text-[11px] font-bold bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-lg">
-                      Bucket: storage
+                  )}
+
+                  <div className="absolute bottom-3 left-3 right-3 bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between text-xs z-10">
+                    <span className="flex items-center gap-1.5 text-slate-800 font-bold">
+                      <Camera className="w-4 h-4 text-[#256BF5]" /> Photo Loaded
                     </span>
-                  </div>
-
-                  {/* Image Preview Box */}
-                  <div className="relative w-full h-64 sm:h-72 rounded-2xl bg-slate-50 border-2 border-dashed border-blue-200 overflow-hidden flex flex-col items-center justify-center text-center shadow-inner">
-                    <img
-                      src={photoUrl}
-                      alt="Drainage Blockage Preview"
-                      className={`w-full h-full object-cover transition-opacity duration-300 ${isAnalyzing || isUploading ? 'opacity-30' : 'opacity-100'}`}
-                    />
-
-                    {(isUploading || isAnalyzing) && (
-                      <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center space-y-2 z-10">
-                        <Cpu className="w-8 h-8 text-[#256BF5] animate-spin" />
-                        <p className="text-xs font-black text-[#256BF5]">
-                          {isUploading ? 'Uploading to Supabase Storage bucket...' : 'AI Analyzing Drain Features...'}
-                        </p>
-                      </div>
-                    )}
-
-                    <div className="absolute bottom-3 left-3 right-3 bg-white/95 backdrop-blur-md px-3 py-2 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between text-xs z-10">
-                      <span className="flex items-center gap-1.5 text-slate-800 font-bold">
-                        <Camera className="w-3.5 h-3.5 text-[#256BF5]" /> Photo Loaded
-                      </span>
-                      <span className="text-[#10B981] font-black text-[11px]">
-                        {aiClassification ? `${aiClassification.confidence}% AI Confidence` : 'Awaiting Analysis'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Upload button & reference options */}
-                  <div className="space-y-3 pt-1">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full py-3.5 rounded-2xl bg-blue-50 border-2 border-dashed border-blue-300 hover:border-[#256BF5] text-[#256BF5] font-black text-xs flex items-center justify-center gap-2 shadow-sm transition-all hover:bg-blue-100/60 cursor-pointer"
-                    >
-                      <UploadCloud className="w-4 h-4" />
-                      <span>Take Photo or Upload from Device</span>
-                    </button>
-
-                    <div>
-                      <p className="text-[11px] text-slate-500 font-bold mb-1.5">Or test with reference sample photo:</p>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {SAMPLE_PHOTOS.map((sample, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={() => handlePhotoSelect(sample)}
-                            className={`p-2 rounded-xl border text-[10px] font-black text-left transition-all ${
-                              photoUrl === sample.url
-                                ? 'bg-[#256BF5] text-white border-[#256BF5] shadow-md shadow-blue-500/20'
-                                : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                            }`}
-                          >
-                            {sample.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+                    <span className="text-slate-500 font-bold text-[11px]">
+                      Ready for location pinning
+                    </span>
                   </div>
                 </div>
 
-                {/* AI Analysis Card */}
-                <div className="space-y-4">
-                  <div className="bg-blue-50/80 border border-blue-200 rounded-3xl p-5">
-                    <div className="flex items-center gap-2 text-xs font-black text-[#256BF5] mb-1">
-                      <Sparkles className="w-4 h-4" /> Automatic AI Vision Diagnosis
-                    </div>
-                    <p className="text-xs text-slate-600 font-medium">
-                      NIRA's vision model inspects surface silt, debris density, and standing water to pre-classify this report.
-                    </p>
-                  </div>
-
-                  <AIAnalysisCard
-                    result={aiClassification}
-                    isAnalyzing={isAnalyzing || isUploading}
-                    error={aiAnalysisError}
-                    onRetry={() => analyzePhoto(photoUrl, issueType)}
-                    onApplyClassification={(type, sev) => {
-                      setIssueType(type);
-                      setSeverity(sev);
-                    }}
+                {/* Upload Action & Reference Choices */}
+                <div className="space-y-4 pt-1">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
                   />
+
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full py-4 rounded-2xl bg-blue-50 border-2 border-dashed border-blue-300 hover:border-[#256BF5] text-[#256BF5] font-black text-xs sm:text-sm flex items-center justify-center gap-2.5 shadow-sm transition-all hover:bg-blue-100/60 cursor-pointer"
+                  >
+                    <UploadCloud className="w-5 h-5" />
+                    <span>Take Photo or Upload from Device</span>
+                  </button>
+
+                  <div>
+                    <p className="text-[11px] text-slate-500 font-bold mb-2">Or test with reference sample scenario:</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {SAMPLE_PHOTOS.map((sample, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handlePhotoSelect(sample)}
+                          className={`p-2.5 rounded-xl border text-[11px] font-black text-left transition-all ${
+                            photoUrl === sample.url
+                              ? 'bg-[#256BF5] text-white border-[#256BF5] shadow-md shadow-blue-500/20'
+                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                          }`}
+                        >
+                          {sample.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
               </div>
 
               {/* Step 1 Footer Action */}
-              <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
-                <div className="flex items-center gap-2 text-xs text-slate-600 font-medium">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  <span>Photo ready. Next, pinpoint where this drain blockage is located.</span>
+              <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-sm flex items-center justify-between gap-4">
+                <div className="text-xs text-slate-600 font-medium">
+                  Photo loaded. Next, pinpoint where this drain is located.
                 </div>
                 <button
                   type="button"
                   onClick={() => setCurrentStep(2)}
-                  className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-[#256BF5] hover:bg-blue-700 text-white font-black text-xs shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 cursor-pointer ml-auto"
+                  className="px-8 py-3.5 rounded-2xl bg-[#256BF5] hover:bg-blue-700 text-white font-black text-xs shadow-lg shadow-blue-500/25 flex items-center gap-2 transition-all hover:scale-[1.01] active:scale-95 cursor-pointer ml-auto"
                 >
                   <span>Next: Confirm Location & Ward</span>
                   <ArrowRight className="w-4 h-4" />
@@ -505,7 +513,7 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
               STEP 2: LOCATION & WARD IDENTIFICATION
               ========================================================= */}
           {currentStep === 2 && (
-            <div className="space-y-6 animate-fadeIn">
+            <div className="space-y-6 animate-fadeIn max-w-3xl mx-auto">
               <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
                 
                 <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-slate-100">
@@ -515,7 +523,7 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                       Step 2: Pinpoint Location on Satellite Map
                     </h3>
                     <p className="text-xs text-slate-500 font-medium mt-0.5">
-                      Your location is auto-detected via GPS. You can click anywhere on the satellite view to adjust the pin.
+                      Your location is auto-detected via GPS. Click anywhere on the satellite view to adjust the pin.
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -655,7 +663,7 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                   onClick={() => setCurrentStep(3)}
                   className="px-8 py-3.5 rounded-2xl bg-[#256BF5] hover:bg-blue-700 text-white font-black text-xs shadow-lg shadow-blue-500/25 flex items-center gap-2 transition-all hover:scale-[1.01] active:scale-95 cursor-pointer"
                 >
-                  <span>Next: Issue Details & Priority</span>
+                  <span>Next: Issue Details</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -663,103 +671,151 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
           )}
 
           {/* =========================================================
-              STEP 3: ISSUE DETAILS, PRIORITY SCORE & SUBMIT TICKET
+              STEP 3: ISSUE DETAILS & CITIZEN CONTACT
               ========================================================= */}
           {currentStep === 3 && (
-            <div className="space-y-6 animate-fadeIn">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                
-                {/* Form Fields: Details & Reporter Contact */}
-                <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-5">
-                  <div className="pb-3 border-b border-slate-100">
-                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider block">
-                      Step 3: Issue Classification & Details
-                    </span>
-                    <p className="text-[11px] text-slate-500 font-medium mt-0.5">
-                      Verify classification and provide contact info for ticket updates.
-                    </p>
-                  </div>
-
-                  {/* Issue Category & Severity */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-black text-slate-700 mb-1.5">Issue Classification</label>
-                      <select
-                        value={issueType}
-                        onChange={e => setIssueType(e.target.value as DrainageIssueType)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#256BF5]"
-                      >
-                        <option value="BLOCKED_STORM_DRAIN">Blocked Storm Drain (Severe Clogging)</option>
-                        <option value="SILT_ACCUMULATION">Silt & Mud Accumulation</option>
-                        <option value="BROKEN_CULVERT">Broken Culvert / Slab Structure</option>
-                        <option value="GARBAGE_DUMPING">Illegal Garbage Dumping in Drain</option>
-                        <option value="SEWAGE_OVERFLOW">Sewage / Foul Water Overflow</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-black text-slate-700 mb-1.5">Severity</label>
-                      <select
-                        value={severity}
-                        onChange={e => setSeverity(e.target.value as SeverityLevel)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#256BF5]"
-                      >
-                        <option value="CRITICAL">Critical (Road Flooding Risk)</option>
-                        <option value="HIGH">High Impact</option>
-                        <option value="MEDIUM">Medium Impact</option>
-                        <option value="LOW">Low Impact</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Problem Description */}
-                  <div>
-                    <label className="block text-xs font-black text-slate-700 mb-1.5">Problem Description</label>
-                    <textarea
-                      rows={3}
-                      required
-                      value={description}
-                      onChange={e => setDescription(e.target.value)}
-                      placeholder="Describe what is causing the blockage and any observed road water accumulation..."
-                      className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#256BF5] focus:bg-white transition-all"
-                    />
-                  </div>
-
-                  {/* Reporter Contact Info */}
-                  <div className="pt-2 border-t border-slate-100 space-y-3">
-                    <span className="text-xs font-black text-slate-800 block">Citizen Reporter Information</span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[11px] font-black text-slate-700 mb-1">Your Name *</label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="e.g. Rahul Nair"
-                          value={reporterName}
-                          onChange={e => setReporterName(e.target.value)}
-                          className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#256BF5]"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[11px] font-black text-slate-700 mb-1">Phone Number *</label>
-                        <input
-                          type="tel"
-                          required
-                          placeholder="+91 98470 12345"
-                          value={reporterPhone}
-                          onChange={e => setReporterPhone(e.target.value)}
-                          className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#256BF5]"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
+            <div className="space-y-6 animate-fadeIn max-w-2xl mx-auto">
+              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-5">
+                <div className="pb-3 border-b border-slate-100">
+                  <span className="text-xs font-black text-slate-800 uppercase tracking-wider block">
+                    Step 3: Issue Classification & Details
+                  </span>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    Describe the issue and provide contact information for ticket updates.
+                  </p>
                 </div>
 
-                {/* Priority Score Breakdown & Location Summary */}
+                {/* Issue Category & Severity */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-black text-slate-700 mb-1.5">Issue Classification</label>
+                    <select
+                      value={issueType}
+                      onChange={e => setIssueType(e.target.value as DrainageIssueType)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#256BF5]"
+                    >
+                      <option value="BLOCKED_STORM_DRAIN">Blocked Storm Drain (Severe Clogging)</option>
+                      <option value="SILT_ACCUMULATION">Silt & Mud Accumulation</option>
+                      <option value="BROKEN_CULVERT">Broken Culvert / Slab Structure</option>
+                      <option value="GARBAGE_DUMPING">Illegal Garbage Dumping in Drain</option>
+                      <option value="SEWAGE_OVERFLOW">Sewage / Foul Water Overflow</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-black text-slate-700 mb-1.5">Severity</label>
+                    <select
+                      value={severity}
+                      onChange={e => setSeverity(e.target.value as SeverityLevel)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#256BF5]"
+                    >
+                      <option value="CRITICAL">Critical (Road Flooding Risk)</option>
+                      <option value="HIGH">High Impact</option>
+                      <option value="MEDIUM">Medium Impact</option>
+                      <option value="LOW">Low Impact</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Problem Description */}
+                <div>
+                  <label className="block text-xs font-black text-slate-700 mb-1.5">Problem Description</label>
+                  <textarea
+                    rows={3}
+                    required
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
+                    placeholder="Describe what is causing the blockage and any observed road water accumulation..."
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#256BF5] focus:bg-white transition-all"
+                  />
+                </div>
+
+                {/* Reporter Contact Info */}
+                <div className="pt-2 border-t border-slate-100 space-y-3">
+                  <span className="text-xs font-black text-slate-800 block">Citizen Reporter Information</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-black text-slate-700 mb-1">Your Name *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Rahul Nair"
+                        value={reporterName}
+                        onChange={e => setReporterName(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#256BF5]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-black text-slate-700 mb-1">Phone Number *</label>
+                      <input
+                        type="tel"
+                        required
+                        placeholder="+91 98470 12345"
+                        value={reporterPhone}
+                        onChange={e => setReporterPhone(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#256BF5]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Step 3 Footer Actions: advances to Step 4 for NIRA & AI Analysis */}
+              <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-sm flex items-center justify-between gap-4">
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep(2)}
+                  className="px-6 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs flex items-center gap-2 transition-all cursor-pointer"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Back to Location</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep(4)}
+                  className="px-8 py-3.5 rounded-2xl bg-[#256BF5] hover:bg-blue-700 text-white font-black text-xs shadow-lg shadow-blue-500/25 flex items-center gap-2 transition-all hover:scale-[1.01] active:scale-95 cursor-pointer ml-auto"
+                >
+                  <span>Next: View NIRA & AI Analysis</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* =========================================================
+              STEP 4: NIRA & AI ANALYSIS (SHOWN ONLY AFTER STEP 3!)
+              ========================================================= */}
+          {currentStep === 4 && (
+            <div className="space-y-6 animate-fadeIn">
+              
+              {/* Header banner explaining NIRA & AI Analysis */}
+              <div className="bg-blue-50/90 border border-blue-200 rounded-3xl p-5 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-[#256BF5] text-white flex items-center justify-center shrink-0">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900">
+                      Step 4: NIRA Priority Calculation & AI Vision Analysis
+                    </h3>
+                    <p className="text-xs text-slate-600 font-medium">
+                      Automated assessment of your drain photo, ward assignment, and municipal dispatch SLA.
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xs font-black bg-white px-3 py-1.5 rounded-xl border border-blue-200 text-[#256BF5]">
+                  Live Operational Engine
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                
+                {/* LEFT: Target Overview & AI Analysis Card */}
                 <div className="space-y-4">
-                  {/* Quick Summary Pill */}
+                  {/* Target Overview Card */}
                   <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-3">
                     <span className="text-xs font-black text-slate-800 uppercase tracking-wider block border-b border-slate-100 pb-2">
                       Report Target Overview
@@ -776,7 +832,21 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                     </div>
                   </div>
 
-                  {/* DETERMINISTIC NIRA PRIORITY SCORE CARD */}
+                  {/* AI ANALYSIS CARD */}
+                  <AIAnalysisCard
+                    result={aiClassification}
+                    isAnalyzing={isAnalyzing || isUploading}
+                    error={aiAnalysisError}
+                    onRetry={() => analyzePhoto(photoUrl, issueType)}
+                    onApplyClassification={(type, sev) => {
+                      setIssueType(type);
+                      setSeverity(sev);
+                    }}
+                  />
+                </div>
+
+                {/* RIGHT: NIRA Priority Card with SLA Target */}
+                <div className="space-y-4">
                   <NIRAPriorityCard
                     priorityData={priorityData}
                     showExpandableBreakdown={true}
@@ -786,15 +856,15 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
 
               </div>
 
-              {/* Step 3 Footer Actions */}
+              {/* Step 4 Footer Actions: Back to Details or Submit */}
               <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
                 <button
                   type="button"
-                  onClick={() => setCurrentStep(2)}
+                  onClick={() => setCurrentStep(3)}
                   className="px-6 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs flex items-center gap-2 transition-all cursor-pointer"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  <span>Back to Location</span>
+                  <span>Back to Details</span>
                 </button>
 
                 <button
@@ -815,6 +885,7 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                   )}
                 </button>
               </div>
+
             </div>
           )}
 
