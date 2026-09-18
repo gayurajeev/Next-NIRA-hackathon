@@ -99,7 +99,6 @@ export default function PublicLandingPage() {
           </p>
 
           {/* Hero CTAs */}
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
             {user ? (
               <Link
                 href={user.role === 'GOVERNMENT' ? '/admin/command-center' : '/user'}
@@ -109,7 +108,7 @@ export default function PublicLandingPage() {
                 <span>Go to {user.role === 'GOVERNMENT' ? 'Command Center' : 'Citizen Dashboard'}</span>
               </Link>
             ) : (
-              <>
+              <div className="flex flex-wrap items-center justify-center gap-3">
                 <button
                   onClick={() => {
                     setAuthRole('CITIZEN');
@@ -118,22 +117,18 @@ export default function PublicLandingPage() {
                   className="px-8 py-3.5 rounded-full bg-white hover:bg-slate-50 text-slate-900 font-black text-sm shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2.5 cursor-pointer"
                 >
                   <LogIn className="w-4 h-4 text-[#256BF5]" />
-                  <span>Log In</span>
+                  <span>Sign In to Report Issue</span>
                 </button>
 
-                <button
-                  onClick={() => {
-                    setAuthRole('CITIZEN');
-                    setIsAuthModalOpen(true);
-                  }}
-                  className="px-8 py-3.5 rounded-full bg-blue-700/90 hover:bg-blue-700 text-white font-black text-sm border-2 border-blue-400 shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
+                <a
+                  href="#public-map"
+                  className="px-7 py-3.5 rounded-full bg-blue-700/80 hover:bg-blue-700 text-white font-black text-sm border-2 border-blue-300/40 shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
                 >
-                  <User className="w-4 h-4 text-[#FFC800]" />
-                  <span>Sign In</span>
-                </button>
-              </>
+                  <MapPin className="w-4 h-4 text-[#FFC800]" />
+                  <span>View Public Map</span>
+                </a>
+              </div>
             )}
-          </div>
         </div>
       </section>
 
@@ -276,37 +271,37 @@ export default function PublicLandingPage() {
             Why NIRA
           </h2>
           <p className="text-slate-500 text-sm sm:text-base font-medium max-w-xl mx-auto">
-            State-of-the-art civic intelligence built specifically for Kerala's monsoon drainage realities.
+            Built to keep our streets clear, prevent flooding, and ensure every report is resolved quickly.
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Card 1: AI-Assisted Reporting */}
+          {/* Card 1: Smart Photo Detection */}
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-blue-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4">
             <div className="space-y-3">
               <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#256BF5] flex items-center justify-center">
                 <Cpu className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-black text-slate-900">AI-Assisted Reporting</h3>
+              <h3 className="text-xl font-black text-slate-900">Smart Photo Scan</h3>
               <p className="text-slate-600 text-sm font-medium leading-relaxed">
-                Computer vision models classify drain blockages, silt accumulation, broken culverts, and standing water with transparent confidence metrics.
+                Our civic AI model quickly checks your uploaded photo to identify blocked drains, trash, or silt buildup automatically.
               </p>
             </div>
-            <div className="text-xs font-black text-[#256BF5]">Vision Intelligence</div>
+            <div className="text-xs font-black text-[#256BF5]">Instant Recognition</div>
           </div>
 
-          {/* Card 2: Automatic Ward Identification */}
+          {/* Card 2: Automatic Ward Assignment */}
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-blue-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4">
             <div className="space-y-3">
               <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
                 <MapPin className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-black text-slate-900">Automatic Ward Identification</h3>
+              <h3 className="text-xl font-black text-slate-900">Direct Ward Routing</h3>
               <p className="text-slate-600 text-sm font-medium leading-relaxed">
-                Point-in-Polygon GIS algorithms instantly map citizen report coordinates to the designated municipal ward, zonal office, and field engineer.
+                Your pinned location is instantly matched with your local municipal ward office so the right field officer takes responsibility.
               </p>
             </div>
-            <div className="text-xs font-black text-amber-600">Polygon Containment GIS</div>
+            <div className="text-xs font-black text-amber-600">Local Team Assigned</div>
           </div>
 
           {/* Card 3: Priority-Based Response */}
@@ -315,54 +310,54 @@ export default function PublicLandingPage() {
               <div className="w-12 h-12 rounded-2xl bg-red-50 text-[#EF4444] flex items-center justify-center">
                 <Flame className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-black text-slate-900">Priority-Based Response</h3>
+              <h3 className="text-xl font-black text-slate-900">Fast Action Priority</h3>
               <p className="text-slate-600 text-sm font-medium leading-relaxed">
-                Explainable 0–100 operational prioritization scores weight flood impact, major road proximity, and nearby repeat incident clusters.
+                Drains near main roads, hospitals, or standing water risk get high priority so teams can clear them before rain starts.
               </p>
             </div>
-            <div className="text-xs font-black text-[#EF4444]">Transparent Weight Engine</div>
+            <div className="text-xs font-black text-[#EF4444]">Urgent Issues First</div>
           </div>
 
-          {/* Card 4: SLA Escalation */}
+          {/* Card 4: Response Deadlines */}
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-blue-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4">
             <div className="space-y-3">
               <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
                 <Clock className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-black text-slate-900">SLA Escalation</h3>
+              <h3 className="text-xl font-black text-slate-900">Clear Deadlines</h3>
               <p className="text-slate-600 text-sm font-medium leading-relaxed">
-                Predictive response timers enforce 4h to 24h operational response tiers, escalating automatically to Zonal Executive Engineers on breach.
+                Teams work against prompt response timelines. If an issue is delayed, it automatically alerts senior engineers.
               </p>
             </div>
-            <div className="text-xs font-black text-indigo-600">Automated Chain of Command</div>
+            <div className="text-xs font-black text-indigo-600">Accountability Guaranteed</div>
           </div>
 
-          {/* Card 5: Hotspot Detection */}
+          {/* Card 5: Flood Hotspot Alerts */}
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-blue-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4">
             <div className="space-y-3">
               <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center">
                 <Layers className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-black text-slate-900">Hotspot Detection</h3>
+              <h3 className="text-xl font-black text-slate-900">Flood Hotspot Map</h3>
               <p className="text-slate-600 text-sm font-medium leading-relaxed">
-                Spatial clustering flags 3+ reports within 200m to diagnose chronic drainage bottlenecks and coordinate preventive heavy desilting.
+                Multiple reports in the same area highlight chronic flooding zones so municipal machines can clear whole stretches.
               </p>
             </div>
-            <div className="text-xs font-black text-purple-600">Density Cluster Analysis</div>
+            <div className="text-xs font-black text-purple-600">Neighborhood Prevention</div>
           </div>
 
-          {/* Card 6: Resolution Tracking */}
+          {/* Card 6: Photo Proof Verified */}
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-blue-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4">
             <div className="space-y-3">
               <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#10B981] flex items-center justify-center">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-black text-slate-900">Resolution Tracking</h3>
+              <h3 className="text-xl font-black text-slate-900">Verified Photo Proof</h3>
               <p className="text-slate-600 text-sm font-medium leading-relaxed">
-                Closed-loop clearance requires before and after photo evidence, verified with AI change detection before an issue can be closed.
+                Crews upload photo proof once the drain is cleaned. You can inspect the before and after pictures directly in My Reports.
               </p>
             </div>
-            <div className="text-xs font-black text-[#10B981]">Evidence-Backed Auditing</div>
+            <div className="text-xs font-black text-[#10B981]">Photo Proof Verified</div>
           </div>
         </div>
       </section>

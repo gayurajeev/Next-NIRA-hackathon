@@ -827,61 +827,64 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
               <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-5">
                 <div className="pb-3 border-b border-slate-100">
                   <span className="text-xs font-black text-slate-800 uppercase tracking-wider block">
-                    Step 3: Issue Classification & Details
+                    Step 3: What is the issue?
                   </span>
                   <p className="text-xs text-slate-500 font-medium mt-0.5">
-                    Describe the issue and provide contact information for ticket updates.
+                    Tell us what kind of blockage you see and how we can reach you.
                   </p>
                 </div>
 
                 {/* Issue Category & Severity */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-black text-slate-700 mb-1.5">Issue Classification</label>
+                    <label className="block text-xs font-black text-slate-700 mb-1.5">Type of Blockage</label>
                     <select
                       value={issueType}
                       onChange={e => setIssueType(e.target.value as DrainageIssueType)}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#256BF5]"
                     >
-                      <option value="BLOCKED_STORM_DRAIN">Blocked Storm Drain (Severe Clogging)</option>
-                      <option value="SILT_ACCUMULATION">Silt & Mud Accumulation</option>
-                      <option value="BROKEN_CULVERT">Broken Culvert / Slab Structure</option>
-                      <option value="GARBAGE_DUMPING">Illegal Garbage Dumping in Drain</option>
-                      <option value="SEWAGE_OVERFLOW">Sewage / Foul Water Overflow</option>
+                      <option value="BLOCKED_STORM_DRAIN">Blocked Drain (Water cannot flow)</option>
+                      <option value="SILT_ACCUMULATION">Mud & Silt Buildup</option>
+                      <option value="BROKEN_CULVERT">Broken Drain Cover or Concrete Slab</option>
+                      <option value="GARBAGE_DUMPING">Plastic Waste or Trash in Drain</option>
+                      <option value="SEWAGE_OVERFLOW">Sewage or Bad Odor Overflow</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-black text-slate-700 mb-1.5">Severity</label>
+                    <label className="block text-xs font-black text-slate-700 mb-1.5">How urgent is it?</label>
                     <select
                       value={severity}
                       onChange={e => setSeverity(e.target.value as SeverityLevel)}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#256BF5]"
                     >
-                      <option value="CRITICAL">Critical (Road Flooding Risk)</option>
-                      <option value="HIGH">High Impact</option>
-                      <option value="MEDIUM">Medium Impact</option>
-                      <option value="LOW">Low Impact</option>
+                      <option value="CRITICAL">Critical (Road or houses flooding)</option>
+                      <option value="HIGH">High (Water starting to overflow)</option>
+                      <option value="MEDIUM">Medium (Drain running very slowly)</option>
+                      <option value="LOW">Low (Minor debris or warning)</option>
                     </select>
                   </div>
                 </div>
 
                 {/* Problem Description */}
                 <div>
-                  <label className="block text-xs font-black text-slate-700 mb-1.5">Problem Description</label>
+                  <label className="block text-xs font-black text-slate-700 mb-1.5">Details / Description</label>
                   <textarea
                     rows={3}
                     required
                     value={description}
                     onChange={e => setDescription(e.target.value)}
-                    placeholder="Describe what is causing the blockage and any observed road water accumulation..."
+                    placeholder="e.g. Silt and plastic bottles have blocked the drain near the corner store, water is starting to pool..."
                     className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-bold focus:outline-none focus:border-[#256BF5] focus:bg-white transition-all"
                   />
                 </div>
 
                 {/* Reporter Contact Info */}
                 <div className="pt-2 border-t border-slate-100 space-y-3">
-                  <span className="text-xs font-black text-slate-800 block">Citizen Reporter Information</span>
+                  <div>
+                    <span className="text-xs font-black text-slate-800 block">Your Contact Details</span>
+                    <span className="text-[11px] text-slate-500 font-medium">To receive status updates when the drain is cleared.</span>
+                  </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[11px] font-black text-slate-700 mb-1">Your Name *</label>
