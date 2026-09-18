@@ -40,24 +40,24 @@ export const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({
     <div
       className={`bg-white rounded-3xl p-6 border border-slate-200 shadow-sm transition-all space-y-4 ${className}`}
     >
-      {/* 1. CARD HEADER */}
+      {/* 1. REPORT HEADER */}
       <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#256BF5] flex items-center justify-center font-black">
             <Sparkles className="w-4 h-4" />
           </div>
           <div>
             <h3 className="text-sm font-black text-slate-900">
-              Photo Assessment
+              AI Analysis Report
             </h3>
             <span className="text-[11px] font-medium text-slate-500">
-              Automatic scan of your uploaded image
+              Computer vision inspection of drain photo
             </span>
           </div>
         </div>
 
-        <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-[#256BF5] text-[10px] font-bold border border-blue-100">
-          Photo Verified
+        <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-[#256BF5] text-[10px] font-bold border border-blue-100 flex items-center gap-1">
+          <CheckCircle2 className="w-3 h-3 text-emerald-600" /> AI Verified
         </span>
       </div>
 
@@ -71,10 +71,10 @@ export const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({
           </div>
           <div>
             <p className="text-xs font-black text-[#256BF5]">
-              Scanning photo...
+              Generating AI Analysis Report...
             </p>
             <p className="text-[11px] text-slate-500 font-medium mt-0.5">
-              Checking for blockage, silt, and standing water
+              Analyzing obstruction depth, waste accumulation, and standing water
             </p>
           </div>
         </div>
@@ -85,7 +85,7 @@ export const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({
         <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 space-y-2">
           <div className="flex items-center gap-2 font-black text-xs text-amber-800">
             <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
-            <span>Could not detect clearly</span>
+            <span>AI Scan Incomplete</span>
           </div>
           <p className="text-[11px] text-slate-600 font-medium">
             {error || 'Unable to scan drain clearly. You can still submit with your chosen details.'}
@@ -94,10 +94,10 @@ export const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({
             <button
               type="button"
               onClick={onRetry}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs shadow-xs transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs shadow-xs transition-colors cursor-pointer"
             >
               <RefreshCw className="w-3 h-3" />
-              <span>Retry Photo Scan</span>
+              <span>Retry AI Analysis</span>
             </button>
           )}
         </div>
@@ -108,48 +108,60 @@ export const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({
         <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 text-center space-y-1.5 text-slate-500">
           <Info className="w-5 h-5 text-slate-400 mx-auto" />
           <p className="text-xs font-bold text-slate-700">
-            Ready to Scan Photo
+            AI Analysis Ready
           </p>
           <p className="text-[11px] font-medium text-slate-500">
-            Photo will be checked automatically upon upload.
+            Photo will be analyzed automatically by our civic AI model.
           </p>
         </div>
       )}
 
-      {/* 5. CLEAN, USER-FRIENDLY RESULT DISPLAY */}
+      {/* 5. AI ANALYSIS REPORT CONTENT */}
       {!isAnalyzing && !error && result && (
         <div className="space-y-3.5 animate-fadeIn">
-          {/* Top Row: Detected Issue & Risk Badge */}
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
-            <div>
-              <span className="text-[10px] font-bold uppercase text-slate-400 block">
-                Detected Issue
-              </span>
-              <h4 className="text-sm font-black text-slate-900 mt-0.5">
-                {result.categoryName}
-              </h4>
+          {/* Main Finding Banner: Issue, Confidence, Severity */}
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <span className="text-[10px] font-bold uppercase text-slate-400 block">
+                  AI Classification
+                </span>
+                <h4 className="text-sm font-black text-slate-900 mt-0.5">
+                  {result.categoryName}
+                </h4>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded-lg bg-white border border-slate-200 text-slate-700 text-[11px] font-mono font-bold">
+                  {result.confidence}% Match
+                </span>
+                <span
+                  className={`px-3 py-1 rounded-xl text-xs font-black uppercase ${
+                    result.severity === 'CRITICAL'
+                      ? 'bg-red-100 text-[#EF4444] border border-red-200'
+                      : result.severity === 'HIGH'
+                      ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                      : result.severity === 'MEDIUM'
+                      ? 'bg-blue-100 text-[#256BF5] border border-blue-200'
+                      : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                  }`}
+                >
+                  {result.severity === 'CRITICAL' ? 'High Risk' : `${result.severity.toLowerCase()} risk`}
+                </span>
+              </div>
             </div>
 
-            <span
-              className={`px-3 py-1 rounded-xl text-xs font-black uppercase ${
-                result.severity === 'CRITICAL'
-                  ? 'bg-red-100 text-[#EF4444] border border-red-200'
-                  : result.severity === 'HIGH'
-                  ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                  : result.severity === 'MEDIUM'
-                  ? 'bg-blue-100 text-[#256BF5] border border-blue-200'
-                  : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-              }`}
-            >
-              {result.severity === 'CRITICAL' ? 'High Risk' : `${result.severity.toLowerCase()} risk`}
-            </span>
+            {/* AI Summary Statement */}
+            <p className="text-xs text-slate-600 font-medium leading-relaxed pt-2 border-t border-slate-200/80">
+              {result.reasoningSummary}
+            </p>
           </div>
 
-          {/* Simple 2-attribute summary: Obstruction & Standing Water */}
+          {/* Key Findings: Obstruction & Standing Water */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
             <div className="p-3 rounded-2xl bg-white border border-slate-200">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                Observed Obstruction
+                Detected Obstruction
               </span>
               <p className="font-bold text-slate-800 leading-snug">
                 {result.possibleObstruction}
@@ -158,7 +170,7 @@ export const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({
 
             <div className="p-3 rounded-2xl bg-white border border-slate-200">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                Standing Water
+                Standing Water Status
               </span>
               <div className="flex items-center gap-1.5 font-bold text-slate-800">
                 <Droplets className="w-3.5 h-3.5 text-[#256BF5]" />
@@ -167,39 +179,19 @@ export const AIAnalysisCard: React.FC<AIAnalysisCardProps> = ({
             </div>
           </div>
 
-          {/* Collapsible details for curious users (collapsed by default) */}
-          <div className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50">
-            <button
-              type="button"
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="w-full px-3.5 py-2 flex items-center justify-between text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors"
-            >
-              <span className="flex items-center gap-1.5 font-bold text-slate-700">
-                <Info className="w-3.5 h-3.5 text-[#256BF5]" />
-                <span>View scan factors</span>
-              </span>
-              {isExpanded ? (
-                <ChevronUp className="w-4 h-4 text-slate-400" />
-              ) : (
-                <ChevronDown className="w-4 h-4 text-slate-400" />
-              )}
-            </button>
-
-            {isExpanded && (
-              <div className="p-3.5 pt-2 text-xs text-slate-600 space-y-2.5 border-t border-slate-200 bg-white">
-                <ul className="space-y-1">
-                  {result.detectionFactors.map((factor, idx) => (
-                    <li key={idx} className="flex items-start gap-1.5 text-slate-700 font-medium">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                      <span>{factor}</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="text-[11px] text-slate-500 font-medium leading-relaxed pt-1 border-t border-slate-100">
-                  {result.reasoningSummary}
-                </p>
-              </div>
-            )}
+          {/* AI Identified Factors */}
+          <div className="p-3.5 rounded-2xl bg-blue-50/60 border border-blue-100 space-y-2">
+            <span className="text-[10px] font-black uppercase text-[#256BF5] tracking-wider block">
+              AI Detection Points
+            </span>
+            <ul className="space-y-1.5 text-xs">
+              {result.detectionFactors.map((factor, idx) => (
+                <li key={idx} className="flex items-start gap-1.5 text-slate-700 font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                  <span>{factor}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       )}

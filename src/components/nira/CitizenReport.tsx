@@ -924,10 +924,16 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
 
                 <button
                   type="button"
-                  onClick={() => setCurrentStep(4)}
+                  onClick={() => {
+                    if (!aiClassification && !isAnalyzing) {
+                      analyzePhoto(photoUrl, issueType);
+                    }
+                    setCurrentStep(4);
+                  }}
                   className="px-8 py-3.5 rounded-2xl bg-[#256BF5] hover:bg-blue-700 text-white font-black text-xs shadow-lg shadow-blue-500/25 flex items-center gap-2 transition-all hover:scale-[1.01] active:scale-95 cursor-pointer ml-auto"
                 >
-                  <span>Next: View NIRA & AI Analysis</span>
+                  <Sparkles className="w-4 h-4" />
+                  <span>Next: View AI Analysis Report</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -935,12 +941,12 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
           )}
 
           {/* =========================================================
-              STEP 4: NIRA & AI ANALYSIS (SHOWN ONLY AFTER STEP 3!)
+              STEP 4: AI ANALYSIS REPORT & REVIEW (SHOWN AFTER STEP 3!)
               ========================================================= */}
           {currentStep === 4 && (
             <div className="space-y-6 animate-fadeIn">
               
-              {/* Header banner explaining NIRA & AI Analysis */}
+              {/* Header banner explaining AI Analysis Report */}
               <div className="bg-blue-50/90 border border-blue-200 rounded-3xl p-5 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-[#256BF5] text-white flex items-center justify-center shrink-0">
@@ -948,15 +954,15 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                   </div>
                   <div>
                     <h3 className="text-sm font-black text-slate-900">
-                      Step 4: Review & Priority Assessment
+                      Step 4: AI Analysis Report & Review
                     </h3>
                     <p className="text-xs text-slate-600 font-medium">
-                      Review your report details and automatic priority rating before sending to the municipal team.
+                      Review the computer vision findings and priority rating before sending to the municipal team.
                     </p>
                   </div>
                 </div>
                 <span className="text-xs font-black bg-white px-3 py-1.5 rounded-xl border border-blue-200 text-[#256BF5]">
-                  Automated Check
+                  AI Report Ready
                 </span>
               </div>
 
