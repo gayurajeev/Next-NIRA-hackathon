@@ -95,7 +95,7 @@ export default function PublicLandingPage() {
           </div>
 
           <p className="max-w-2xl text-blue-100 text-sm sm:text-base font-medium leading-relaxed">
-            Neighborhood Intelligence & Response Assistant empowers citizens to report blocked storm drains in seconds, automatically connects reports to municipal ward teams, and provides real-time public transparency for flood prevention across Keralam.
+            Report clogged drains in seconds. Your report is automatically sent to the local municipal ward team with live progress tracking until it is cleared.
           </p>
 
           {/* Hero CTAs */}
@@ -137,29 +137,29 @@ export default function PublicLandingPage() {
         </div>
       </section>
 
-      {/* BANNER TAGS (Fund My Crazy Style) */}
+      {/* BANNER TAGS */}
       <div className="relative -mt-10 flex flex-col items-center justify-center z-10 px-4">
         <div className="bg-[#FFC800] text-slate-950 px-8 py-3 rounded-2xl shadow-xl font-black text-lg sm:text-2xl tracking-tight border-2 border-slate-900/10">
-          Clean Keralam • Zero Waterlogging
+          Clean Kochi • Zero Waterlogging
         </div>
         <div className="mt-2 bg-slate-900 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow">
-          Monsoon Readiness 2026 • 24/7 Ward Municipal Response
+          Monsoon Readiness • 24/7 Municipal Response
         </div>
       </div>
 
       {/* ==================================================
-          2. HOW NIRA WORKS (4 Clear Civic Steps)
+          2. HOW NIRA WORKS (4 Simple Civic Steps)
           ================================================== */}
       <section className="max-w-6xl mx-auto w-full px-4 sm:px-6 my-16">
         <div className="text-center space-y-3 mb-12">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-100 text-[#256BF5] text-xs font-black">
-            <span>TRANSPARENT CIVIC LIFECYCLE</span>
+            <span>SIMPLE 4-STEP PROCESS</span>
           </div>
           <h2 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">
             How NIRA Works
           </h2>
           <p className="text-slate-500 text-sm sm:text-base font-medium max-w-xl mx-auto">
-            From an initial citizen snapshot to verified municipal clearance, NIRA delivers an end-to-end closed loop.
+            From your quick photo report to confirmed clearance, here is how issues get resolved.
           </p>
         </div>
 
@@ -170,14 +170,14 @@ export default function PublicLandingPage() {
               <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#256BF5] flex items-center justify-center font-black text-lg mb-4 border border-blue-200">
                 1
               </div>
-              <h3 className="text-xl font-black text-slate-900">1. Report</h3>
+              <h3 className="text-xl font-black text-slate-900">1. Take a Photo</h3>
               <p className="text-slate-600 text-sm font-medium mt-2 leading-relaxed">
-                Citizen uploads a photo and location of a clogged drain or silt accumulation.
+                Snap or upload a picture of the clogged drain. Your phone GPS marks the location automatically.
               </p>
             </div>
             <div className="pt-3 border-t border-slate-100 flex items-center gap-2 text-xs font-bold text-[#256BF5]">
               <Camera className="w-4 h-4" />
-              <span>Mobile Photo & GPS</span>
+              <span>Camera & Location</span>
             </div>
           </div>
 
@@ -187,14 +187,14 @@ export default function PublicLandingPage() {
               <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center font-black text-lg mb-4 border border-amber-200">
                 2
               </div>
-              <h3 className="text-xl font-black text-slate-900">2. Identify</h3>
+              <h3 className="text-xl font-black text-slate-900">2. Ward Assigned</h3>
               <p className="text-slate-600 text-sm font-medium mt-2 leading-relaxed">
-                NIRA identifies exact GIS ward boundaries, obstruction severity, and responsible officer.
+                NIRA automatically links your report to the correct city ward and assigns it to the local officer.
               </p>
             </div>
             <div className="pt-3 border-t border-slate-100 flex items-center gap-2 text-xs font-bold text-amber-700">
               <MapPin className="w-4 h-4" />
-              <span>Point-in-Polygon Ward GIS</span>
+              <span>Automatic Ward Routing</span>
             </div>
           </div>
 
@@ -204,31 +204,31 @@ export default function PublicLandingPage() {
               <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-black text-lg mb-4 border border-indigo-200">
                 3
               </div>
-              <h3 className="text-xl font-black text-slate-900">3. Respond</h3>
+              <h3 className="text-xl font-black text-slate-900">3. Crew Dispatched</h3>
               <p className="text-slate-600 text-sm font-medium mt-2 leading-relaxed">
-                Responsible municipal authority receives the prioritized ticket and dispatches rapid response crews.
+                Field response teams are sent out promptly to unclog the drain before water can accumulate.
               </p>
             </div>
             <div className="pt-3 border-t border-slate-100 flex items-center gap-2 text-xs font-bold text-indigo-700">
               <Building2 className="w-4 h-4" />
-              <span>SLA-Monitored Dispatch</span>
+              <span>Fast Response Timelines</span>
             </div>
           </div>
 
           {/* Step 4: Resolve */}
           <div className="bg-white rounded-3xl p-6 border border-blue-100 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between space-y-4">
             <div>
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#10B981] flex items-center justify-center font-black text-lg mb-4 border border-emerald-200">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-black text-lg mb-4 border border-emerald-200">
                 4
               </div>
-              <h3 className="text-xl font-black text-slate-900">4. Resolve</h3>
+              <h3 className="text-xl font-black text-slate-900">4. Verified Cleaned</h3>
               <p className="text-slate-600 text-sm font-medium mt-2 leading-relaxed">
-                Progress, before/after evidence photos, and completed resolution become publicly visible.
+                Crews upload photo proof once the drain is cleared. Citizens can inspect the fix in My Reports.
               </p>
             </div>
-            <div className="pt-3 border-t border-slate-100 flex items-center gap-2 text-xs font-bold text-[#10B981]">
+            <div className="pt-3 border-t border-slate-100 flex items-center gap-2 text-xs font-bold text-emerald-700">
               <CheckCircle2 className="w-4 h-4" />
-              <span>Verified Photo Evidence</span>
+              <span>Photo Proof Verified</span>
             </div>
           </div>
         </div>

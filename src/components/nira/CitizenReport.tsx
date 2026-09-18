@@ -540,8 +540,8 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                       Capture directly using your device camera or upload from files.
                     </p>
                   </div>
-                  <span className="text-[#256BF5] font-mono text-[11px] font-bold bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-xl">
-                    Bucket: storage
+                  <span className="text-emerald-700 font-bold text-[11px] bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-xl flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Photo Attached
                   </span>
                 </div>
 
@@ -557,7 +557,7 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                     <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center space-y-2 z-10">
                       <Cpu className="w-8 h-8 text-[#256BF5] animate-spin" />
                       <p className="text-xs font-black text-[#256BF5]">
-                        Uploading photo to Supabase Storage bucket...
+                        Uploading your photo...
                       </p>
                     </div>
                   )}
@@ -719,9 +719,9 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                     <div className="p-4 rounded-2xl bg-blue-50/90 border-2 border-dashed border-blue-300 flex items-center gap-3 animate-pulse">
                       <Loader2 className="w-5 h-5 text-[#256BF5] animate-spin flex-shrink-0" />
                       <div>
-                        <p className="text-xs font-black text-[#256BF5]">Identifying municipal ward boundary...</p>
+                        <p className="text-xs font-black text-[#256BF5]">Finding your municipal ward...</p>
                         <p className="text-[11px] text-slate-500 font-medium">
-                          Running Point-in-Polygon boundary lookup against Keralam Municipal Corporation GIS dataset...
+                          Matching your pinned location with the nearest city ward and response team...
                         </p>
                       </div>
                     </div>
@@ -732,7 +732,7 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                         <span>Unable to identify ward automatically. Please select within city limits.</span>
                       </div>
                       <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
-                        Please click inside Keralam Corporation limits on the satellite map to bind this incident to a response team.
+                        Please click inside Keralam Corporation limits on the map to link this report to the local response team.
                       </p>
                     </div>
                   ) : wardLookupResult ? (
@@ -744,8 +744,8 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                             Municipal Ward Identified
                           </span>
                         </div>
-                        <span className="text-xs font-bold text-slate-500">
-                          Boundary Engine: {wardLookupResult.detectionMethod === 'POLYGON_CONTAINMENT' ? 'Polygon Boundary' : 'Corridor Proximity'}
+                        <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                          ✓ Verified Ward Boundary
                         </span>
                       </div>
 
@@ -948,15 +948,15 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                   </div>
                   <div>
                     <h3 className="text-sm font-black text-slate-900">
-                      Step 4: NIRA Priority Calculation & AI Vision Analysis
+                      Step 4: Review & Priority Assessment
                     </h3>
                     <p className="text-xs text-slate-600 font-medium">
-                      Automated assessment of your drain photo, ward assignment, and municipal dispatch SLA.
+                      Review your report details and automatic priority rating before sending to the municipal team.
                     </p>
                   </div>
                 </div>
                 <span className="text-xs font-black bg-white px-3 py-1.5 rounded-xl border border-blue-200 text-[#256BF5]">
-                  Live Operational Engine
+                  Automated Check
                 </span>
               </div>
 
@@ -967,7 +967,7 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                   {/* Target Overview Card */}
                   <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-3">
                     <span className="text-xs font-black text-slate-800 uppercase tracking-wider block border-b border-slate-100 pb-2">
-                      Report Target Overview
+                      Report Summary
                     </span>
                     <div className="flex items-center gap-3">
                       <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 border border-slate-200">
@@ -1024,12 +1024,12 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Generating Ticket & Routing to Ward Officer...</span>
+                      <span>Sending Report to Municipal Team...</span>
                     </>
                   ) : (
                     <>
                       <Send className="w-4 h-4" />
-                      <span>Submit Drainage Report Ticket</span>
+                      <span>Submit Report to Municipal Team</span>
                     </>
                   )}
                 </button>
@@ -1047,19 +1047,19 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
           </div>
 
           <div>
-            <h3 className="text-2xl font-black text-slate-900">Drainage Ticket Created!</h3>
+            <h3 className="text-2xl font-black text-slate-900">Drainage Report Submitted!</h3>
             <p className="text-xs text-slate-500 font-medium mt-1">
-              Ticket code assigned and routed to {submittedReport.ward} (Ward #{submittedReport.ward_number}) Officer. Photo saved to Supabase 'storage'.
+              Your report has been sent to the {submittedReport.ward} (Ward #{submittedReport.ward_number}) response team.
             </p>
           </div>
 
           <div className="p-6 rounded-2xl bg-[#EDF4FF] border border-blue-100 text-left space-y-3 font-mono text-xs">
             <div className="flex justify-between border-b border-blue-200 pb-2">
-              <span className="text-slate-600 font-sans font-bold">Ticket PNR</span>
+              <span className="text-slate-600 font-sans font-bold">Tracking ID</span>
               <strong className="text-[#256BF5] font-black">{submittedReport.ticket_code}</strong>
             </div>
             <div className="flex justify-between border-b border-blue-200 pb-2">
-              <span className="text-slate-600 font-sans font-bold">Ward Identified</span>
+              <span className="text-slate-600 font-sans font-bold">Ward</span>
               <span className="text-slate-900 font-sans font-bold">{submittedReport.ward} (Ward #{submittedReport.ward_number})</span>
             </div>
             <div className="flex justify-between border-b border-blue-200 pb-2">
@@ -1067,9 +1067,9 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
               <span className="text-emerald-800 font-sans font-bold">{submittedReport.authority || 'Keralam Municipal Corporation (KMC)'}</span>
             </div>
             <div className="flex justify-between border-b border-blue-200 pb-2">
-              <span className="text-slate-600 font-sans font-bold">Location Method</span>
+              <span className="text-slate-600 font-sans font-bold">Location</span>
               <span className="text-slate-900 font-sans font-bold">
-                {submittedReport.selection_method === 'GPS_AUTO' ? '📍 Live GPS Captured' : '🗺 Manually Selected Pin'}
+                {submittedReport.selection_method === 'GPS_AUTO' ? '📍 Your Current GPS Location' : '🗺 Pinned on Map'}
               </span>
             </div>
             <div className="flex justify-between border-b border-blue-200 pb-2">
@@ -1078,14 +1078,14 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-slate-600 font-sans font-bold block">NIRA Priority Score</span>
-                <span className="text-[10px] text-slate-400 font-sans font-bold">Prototype operational prioritization</span>
+                <span className="text-slate-600 font-sans font-bold block">Assigned Priority</span>
+                <span className="text-[10px] text-slate-400 font-sans font-bold">Automatic priority assessment</span>
               </div>
               <NIRAPriorityBadge score={submittedReport.priority_score} size="md" />
             </div>
             {submittedReport.priority_explanation && (
               <div className="pt-2 border-t border-blue-200/80 text-[11px] font-sans text-slate-600 font-medium leading-relaxed">
-                <strong className="text-slate-800 font-bold block mb-0.5">Operational Dispatch Logic:</strong>
+                <strong className="text-slate-800 font-bold block mb-0.5">Priority Details:</strong>
                 {submittedReport.priority_explanation}
               </div>
             )}

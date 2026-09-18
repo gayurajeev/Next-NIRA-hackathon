@@ -165,7 +165,7 @@ export const MyReports: React.FC<MyReportsProps> = ({
                 My Submitted Reports
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 font-medium">
-                Public municipal accountability tracker with real-time lifecycle status, crew assignment, and verified resolution evidence.
+                Track your submitted reports, see live updates from response teams, and view photo verification when resolved.
               </p>
             </div>
           </div>
