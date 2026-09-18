@@ -100,22 +100,8 @@ export default function CitizenMyReportsPage() {
       </div>
 
       {/* Main Container */}
-      <div className="bg-white rounded-[40px] border border-blue-100 p-6 sm:p-10 shadow-sm space-y-6">
+      <div className="bg-white rounded-3xl sm:rounded-[40px] border border-blue-100 p-4 sm:p-8 shadow-sm space-y-6">
         
-        {/* Page Title */}
-        <div className="border-b border-slate-100 pb-5">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-[#10B981] text-xs font-black mb-2">
-            <ClipboardList className="w-3.5 h-3.5" />
-            <span>REAL-TIME STATUS TRACKER</span>
-          </div>
-          <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
-            My Submitted Drainage Reports
-          </h1>
-          <p className="text-slate-500 text-xs sm:text-sm font-medium mt-1">
-            Track real-time progress timeline, municipal officer assignment, rapid action crew, and verified resolution evidence for your tickets.
-          </p>
-        </div>
-
         {/* Complete Citizen Tracking Component */}
         <MyReports
           reports={reports}
