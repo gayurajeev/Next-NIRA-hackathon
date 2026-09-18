@@ -86,9 +86,6 @@ export const Header: React.FC<HeaderProps> = ({ openIncidentsCount: propIncident
                   <span className="text-xl font-black tracking-tight text-slate-900 group-hover:text-[#256BF5] transition-colors">
                     NIRA
                   </span>
-                  <span className="px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider bg-[#FFC800] text-slate-900 rounded-full">
-                    Civic AI
-                  </span>
                 </div>
                 <p className="text-xs font-bold text-slate-500 hidden sm:block">
                   Neighborhood Intelligence & Response Assistant
@@ -116,18 +113,6 @@ export const Header: React.FC<HeaderProps> = ({ openIncidentsCount: propIncident
                   </Link>
 
                   <Link
-                    href="/user/submit"
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${
-                      pathname === '/user/submit'
-                        ? 'bg-[#256BF5] text-white shadow-md shadow-blue-500/30'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
-                    }`}
-                  >
-                    <FileText className="w-4 h-4" />
-                    Report Issue
-                  </Link>
-
-                  <Link
                     href="/user/my-reports"
                     className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${
                       pathname === '/user/my-reports'
@@ -137,18 +122,6 @@ export const Header: React.FC<HeaderProps> = ({ openIncidentsCount: propIncident
                   >
                     <User className="w-4 h-4" />
                     My Reports
-                  </Link>
-
-                  <Link
-                    href="/#public-map"
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${
-                      pathname === '/public-map'
-                        ? 'bg-[#10B981] text-white shadow-md shadow-green-500/30'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
-                    }`}
-                  >
-                    <Map className="w-4 h-4 text-[#10B981]" />
-                    Public Map
                   </Link>
                 </>
               )}
@@ -172,18 +145,6 @@ export const Header: React.FC<HeaderProps> = ({ openIncidentsCount: propIncident
                       </span>
                     )}
                   </Link>
-
-                  <Link
-                    href="/#public-map"
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${
-                      pathname === '/public-map'
-                        ? 'bg-[#10B981] text-white shadow-md shadow-green-500/30'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
-                    }`}
-                  >
-                    <Map className="w-4 h-4 text-[#10B981]" />
-                    Public Map
-                  </Link>
                 </>
               )}
             </nav>
@@ -191,7 +152,7 @@ export const Header: React.FC<HeaderProps> = ({ openIncidentsCount: propIncident
 
             {/* Right Action & User Pill */}
             <div className="flex items-center gap-3">
-              {user ? (
+              {user && (
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-slate-100 border border-slate-200">
                   <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 bg-blue-200 border border-white shadow-xs">
                     {user.avatar_url ? (
@@ -215,43 +176,21 @@ export const Header: React.FC<HeaderProps> = ({ openIncidentsCount: propIncident
                   <button
                     onClick={handleSignOut}
                     title="Sign Out"
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors ml-1"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors ml-1 cursor-pointer"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                   </button>
                 </div>
-              ) : (
-                <Link
-                  href="/#public-map"
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-[#EDF4FF] border border-blue-200 text-[#256BF5] font-black text-xs hover:bg-blue-100 hover:scale-105 active:scale-95 transition-all"
-                >
-                  <Map className="w-3.5 h-3.5" />
-                  <span>View Public Map</span>
-                </Link>
               )}
 
-              {/* Primary Action Button */}
-              {user?.role === 'GOVERNMENT' ? (
+              {/* Primary Action Button for Government */}
+              {user?.role === 'GOVERNMENT' && (
                 <Link
                   href="/admin/command-center"
                   className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-[#FFC800] hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md shadow-yellow-500/20 hover:scale-105 active:scale-95 transition-all"
                 >
                   <Building2 className="w-3.5 h-3.5" />
                   <span>Command Center</span>
-                </Link>
-              ) : (
-                <Link
-                  href={user ? '/user/submit' : '/#public-map'}
-                  onClick={(e) => {
-                    if (!user) {
-                      e.preventDefault();
-                      handleOpenAuth('CITIZEN');
-                    }
-                  }}
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-[#256BF5] hover:bg-blue-700 text-white font-black text-xs shadow-lg shadow-blue-500/25 hover:scale-105 active:scale-95 transition-all"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Report Issue</span>
                 </Link>
               )}
 
@@ -293,15 +232,6 @@ export const Header: React.FC<HeaderProps> = ({ openIncidentsCount: propIncident
                     Dashboard
                   </Link>
                   <Link
-                    href="/user/submit"
-                    className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-black ${
-                      pathname === '/user/submit' ? 'bg-[#256BF5] text-white' : 'text-slate-700 hover:bg-slate-100'
-                    }`}
-                  >
-                    <FileText className="w-4 h-4" />
-                    Report a Drainage Issue
-                  </Link>
-                  <Link
                     href="/user/my-reports"
                     className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-black ${
                       pathname === '/user/my-reports' ? 'bg-[#256BF5] text-white' : 'text-slate-700 hover:bg-slate-100'
@@ -310,16 +240,9 @@ export const Header: React.FC<HeaderProps> = ({ openIncidentsCount: propIncident
                     <User className="w-4 h-4" />
                     My Reports
                   </Link>
-                  <Link
-                    href="/#public-map"
-                    className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-black text-slate-700 hover:bg-slate-100"
-                  >
-                    <Map className="w-4 h-4 text-[#10B981]" />
-                    Public Map
-                  </Link>
                   <button
                     onClick={handleSignOut}
-                    className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-black text-red-600 hover:bg-red-50 text-left"
+                    className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-black text-red-600 hover:bg-red-50 text-left cursor-pointer"
                   >
                     <LogOut className="w-4 h-4" />
                     Sign Out ({user.name})
@@ -344,13 +267,6 @@ export const Header: React.FC<HeaderProps> = ({ openIncidentsCount: propIncident
                         {openCount}
                       </span>
                     )}
-                  </Link>
-                  <Link
-                    href="/#public-map"
-                    className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-black text-slate-700 hover:bg-slate-100"
-                  >
-                    <Map className="w-4 h-4 text-[#10B981]" />
-                    Public Map
                   </Link>
                   <button
                     onClick={handleSignOut}
