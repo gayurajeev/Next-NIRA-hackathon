@@ -28,6 +28,8 @@ import {
   ArrowRight,
   ArrowLeft,
   Check,
+  RefreshCw,
+  X,
 } from 'lucide-react';
 
 interface CitizenReportProps {
@@ -74,6 +76,8 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
 }) => {
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   // Multi-step workflow state:
   // Step 1: Photo Capture
@@ -81,6 +85,13 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
   // Step 3: Issue Details
   // Step 4: AI Diagnosis & NIRA Priority Analysis (shown only after step 3)
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
+
+  // Live Camera state
+  const [isCameraModalOpen, setIsCameraModalOpen] = useState<boolean>(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [cameraFacingMode, setCameraFacingMode] = useState<'environment' | 'user'>('environment');
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [isStartingCamera, setIsStartingCamera] = useState<boolean>(false);
 
   const [photoUrl, setPhotoUrl] = useState<string>(SAMPLE_PHOTOS[0].url);
   const [issueType, setIssueType] = useState<DrainageIssueType>('BLOCKED_STORM_DRAIN');
@@ -114,11 +125,122 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
     }
   }, [user, reporterName]);
 
+  // Clean up camera stream on unmount
+  useEffect(() => {
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, [cameraStream]);
+
   // Automatic initial ward determination and photo classification on mount
   useEffect(() => {
     handleLocationUpdate(9.9674, 76.3160, undefined, false);
     analyzePhoto(SAMPLE_PHOTOS[0].url, SAMPLE_PHOTOS[0].type);
   }, []);
+
+  // Live in-browser Camera functions
+  const startCamera = async (facing: 'environment' | 'user' = 'environment') => {
+    setCameraError(null);
+    setIsStartingCamera(true);
+    setIsCameraModalOpen(true);
+    setCameraFacingMode(facing);
+
+    try {
+      if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+        // Fall back directly to native device camera input
+        setIsCameraModalOpen(false);
+        setIsStartingCamera(false);
+        cameraInputRef.current?.click();
+        return;
+      }
+
+      // Stop previous tracks if switching
+      if (cameraStream) {
+        cameraStream.getTracks().forEach((t) => t.stop());
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: facing },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+        audio: false,
+      });
+
+      setCameraStream(stream);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+    } catch (err: any) {
+      console.warn('Camera stream error, falling back to native file capture:', err);
+      setCameraError('Direct webcam/camera stream unavailable. Launching device camera instead...');
+      setTimeout(() => {
+        setIsCameraModalOpen(false);
+        cameraInputRef.current?.click();
+      }, 1000);
+    } finally {
+      setIsStartingCamera(false);
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((t) => t.stop());
+      setCameraStream(null);
+    }
+    setIsCameraModalOpen(false);
+  };
+
+  const switchCameraFacing = () => {
+    const nextFacing = cameraFacingMode === 'environment' ? 'user' : 'environment';
+    startCamera(nextFacing);
+  };
+
+  const capturePhotoFromCamera = async () => {
+    if (!videoRef.current) return;
+
+    const video = videoRef.current;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+
+    // Stop camera and close viewfinder
+    stopCamera();
+
+    // Show snapped photo instantly
+    setPhotoUrl(dataUrl);
+
+    // Upload to Supabase bucket 'storage'
+    setIsUploading(true);
+    try {
+      canvas.toBlob(async (blob) => {
+        if (blob) {
+          const file = new File([blob], `drain_camera_${Date.now()}.jpg`, { type: 'image/jpeg' });
+          try {
+            const uploadedUrl = await niraService.uploadDrainagePhoto(file);
+            setPhotoUrl(uploadedUrl);
+            await analyzePhoto(uploadedUrl);
+          } catch {
+            await analyzePhoto(dataUrl);
+          } finally {
+            setIsUploading(false);
+          }
+        }
+      }, 'image/jpeg', 0.88);
+    } catch {
+      setIsUploading(false);
+      await analyzePhoto(dataUrl);
+    }
+  };
 
   // AI photo analysis handler using pluggable drainageClassifierService
   const analyzePhoto = async (url: string, forcedType?: DrainageIssueType) => {
@@ -404,7 +526,7 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
         <form onSubmit={handleSubmit} className="space-y-6">
 
           {/* =========================================================
-              STEP 1: DRAIN PHOTO CAPTURE (NO AI CARD SHOWN HERE)
+              STEP 1: DRAIN PHOTO CAPTURE (CAMERA CAPTURE + FILE UPLOAD)
               ========================================================= */}
           {currentStep === 1 && (
             <div className="space-y-6 animate-fadeIn max-w-2xl mx-auto">
@@ -415,7 +537,7 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                       Step 1: Capture Drain Photo
                     </span>
                     <p className="text-xs text-slate-500 font-medium mt-0.5">
-                      Snap an on-site photo of the blocked drain or select a test scenario.
+                      Capture directly using your device camera or upload from files.
                     </p>
                   </div>
                   <span className="text-[#256BF5] font-mono text-[11px] font-bold bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-xl">
@@ -450,26 +572,53 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                   </div>
                 </div>
 
-                {/* Upload Action & Reference Choices */}
-                <div className="space-y-4 pt-1">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
+                {/* Camera & File Upload Inputs (hidden triggers) */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
 
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full py-4 rounded-2xl bg-blue-50 border-2 border-dashed border-blue-300 hover:border-[#256BF5] text-[#256BF5] font-black text-xs sm:text-sm flex items-center justify-center gap-2.5 shadow-sm transition-all hover:bg-blue-100/60 cursor-pointer"
-                  >
-                    <UploadCloud className="w-5 h-5" />
-                    <span>Take Photo or Upload from Device</span>
-                  </button>
+                {/* Native mobile camera trigger with capture attribute */}
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
 
-                  <div>
+                {/* TWO PROMINENT ACTION BUTTONS: Live Camera vs Gallery Upload */}
+                <div className="space-y-3 pt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    
+                    {/* Primary: Live Camera Viewfinder */}
+                    <button
+                      type="button"
+                      onClick={() => startCamera('environment')}
+                      className="py-4 px-4 rounded-2xl bg-[#256BF5] hover:bg-blue-700 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2.5 shadow-md shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-95 cursor-pointer"
+                    >
+                      <Camera className="w-5 h-5" />
+                      <span>Capture with Live Camera</span>
+                    </button>
+
+                    {/* Secondary: Upload from Device */}
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="py-4 px-4 rounded-2xl bg-blue-50 hover:bg-blue-100/80 border border-blue-200 text-[#256BF5] font-black text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all hover:scale-[1.01] active:scale-95 cursor-pointer"
+                    >
+                      <UploadCloud className="w-5 h-5" />
+                      <span>Upload from Gallery / Files</span>
+                    </button>
+
+                  </div>
+
+                  {/* Reference Samples */}
+                  <div className="pt-2">
                     <p className="text-[11px] text-slate-500 font-bold mb-2">Or test with reference sample scenario:</p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {SAMPLE_PHOTOS.map((sample, idx) => (
@@ -958,6 +1107,104 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
             >
               Submit Another Report
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================
+          LIVE CAMERA VIEWFINDER MODAL
+          ========================================================= */}
+      {isCameraModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/80 backdrop-blur-sm animate-fadeIn">
+          <div className="relative w-full max-w-lg bg-slate-950 text-white rounded-3xl overflow-hidden shadow-2xl border border-slate-800 space-y-4 p-4 sm:p-6">
+            
+            {/* Modal Top Bar */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+                <span className="text-xs font-black uppercase tracking-wider text-slate-300">
+                  Live Camera Viewfinder
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={stopCamera}
+                className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Camera Error Message if any */}
+            {cameraError && (
+              <div className="p-3 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold">
+                {cameraError}
+              </div>
+            )}
+
+            {/* Video Viewport with Crosshair Reticle */}
+            <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-black flex items-center justify-center border border-slate-800">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover"
+              />
+
+              {isStartingCamera && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60 z-10">
+                  <Loader2 className="w-8 h-8 text-[#256BF5] animate-spin" />
+                  <p className="text-xs font-bold text-slate-300">Initializing camera hardware...</p>
+                </div>
+              )}
+
+              {/* Viewfinder Reticle / Framing Overlay */}
+              <div className="absolute inset-4 sm:inset-6 pointer-events-none border border-white/25 rounded-2xl flex flex-col justify-between p-2">
+                <div className="flex justify-between text-[10px] font-mono text-white/50">
+                  <span>[ DRAIN SCAN ]</span>
+                  <span>LIVE</span>
+                </div>
+                <div className="flex items-center justify-center">
+                  <Crosshair className="w-8 h-8 text-white/40" />
+                </div>
+                <div className="text-center text-[10px] font-bold text-white/60">
+                  Center blocked drain segment in frame
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Controls */}
+            <div className="flex items-center justify-between gap-4 pt-2">
+              <button
+                type="button"
+                onClick={switchCameraFacing}
+                title="Switch Camera"
+                className="p-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all cursor-pointer"
+              >
+                <RefreshCw className="w-5 h-5" />
+              </button>
+
+              {/* Big Shutter Button */}
+              <button
+                type="button"
+                onClick={capturePhotoFromCamera}
+                disabled={isStartingCamera}
+                className="flex-1 py-3.5 px-6 rounded-2xl bg-[#256BF5] hover:bg-blue-600 text-white font-black text-sm shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2.5 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer disabled:opacity-50"
+              >
+                <div className="w-3.5 h-3.5 rounded-full bg-white animate-ping" />
+                <span>Snap Photo</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={stopCamera}
+                className="px-4 py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white font-bold text-xs transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+
           </div>
         </div>
       )}
