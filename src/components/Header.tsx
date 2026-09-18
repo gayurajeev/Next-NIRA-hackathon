@@ -152,35 +152,46 @@ export const Header: React.FC<HeaderProps> = ({ openIncidentsCount: propIncident
 
             {/* Right Action & User Pill */}
             <div className="flex items-center gap-3">
-              {user && (
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-slate-100 border border-slate-200">
-                  <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 bg-blue-200 border border-white shadow-xs">
-                    {user.avatar_url ? (
-                      <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-[#256BF5] text-white text-xs font-black">
-                        {user.name.charAt(0).toUpperCase()}
-                      </div>
-                    )}
+              {user ? (
+                <>
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-slate-100 border border-slate-200">
+                    <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 bg-blue-200 border border-white shadow-xs">
+                      {user.avatar_url ? (
+                        <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-[#256BF5] text-white text-xs font-black">
+                          {user.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="text-left hidden sm:block">
+                      <div className="text-[11px] font-black text-slate-900 leading-none">{user.name}</div>
+                      <span className={`text-[9px] font-black uppercase px-1.5 py-0.2 rounded mt-0.5 inline-block ${
+                        user.role === 'GOVERNMENT' ? 'bg-[#FFC800] text-slate-950' : 'bg-blue-100 text-[#256BF5]'
+                      }`}>
+                        {user.role === 'GOVERNMENT' ? 'Authority (KMC)' : 'Citizen'}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="text-left hidden lg:block">
-                    <div className="text-[11px] font-black text-slate-900 leading-none">{user.name}</div>
-                    <span className={`text-[9px] font-black uppercase px-1.5 py-0.2 rounded mt-0.5 inline-block ${
-                      user.role === 'GOVERNMENT' ? 'bg-[#FFC800] text-slate-950' : 'bg-blue-100 text-[#256BF5]'
-                    }`}>
-                      {user.role === 'GOVERNMENT' ? 'Authority (KMC)' : 'Citizen'}
-                    </span>
-                  </div>
-
+                  {/* Proper visible Logout option in navbar */}
                   <button
                     onClick={handleSignOut}
-                    title="Sign Out"
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors ml-1 cursor-pointer"
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/80 font-black text-xs transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-xs"
                   >
                     <LogOut className="w-3.5 h-3.5" />
+                    <span>Logout</span>
                   </button>
-                </div>
+                </>
+              ) : (
+                <button
+                  onClick={() => handleOpenAuth('CITIZEN')}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-[#256BF5] hover:bg-blue-700 text-white font-black text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer hover:scale-105 active:scale-95"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span>Sign In</span>
+                </button>
               )}
 
               {/* Primary Action Button for Government */}

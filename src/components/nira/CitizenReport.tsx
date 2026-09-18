@@ -999,7 +999,7 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                   <NIRAPriorityCard
                     priorityData={priorityData}
                     showExpandableBreakdown={true}
-                    defaultExpanded={true}
+                    defaultExpanded={false}
                   />
                 </div>
 

@@ -128,14 +128,6 @@ export default function CitizenDashboardPage() {
             </p>
           </div>
         </div>
-
-        <Link
-          href="/user/submit"
-          className="px-6 py-3 rounded-2xl bg-[#256BF5] hover:bg-blue-700 text-white font-black text-xs sm:text-sm shadow-lg shadow-blue-500/25 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 whitespace-nowrap"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Report New Drain</span>
-        </Link>
       </div>
 
       {/* KPI Counters */}
