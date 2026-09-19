@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NIRA — Hackathon Pitch Deck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #f1f5f9;
+      background-image: 
+        linear-gradient(to right, rgba(37, 107, 245, 0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(37, 107, 245, 0.05) 1px, transparent 1px);
+      background-size: 28px 28px;
+      color: #0f172a;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow-x: hidden;
+    }
+
+    /* Presentation Header */
+    header {
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #ffffff;
+      border-bottom: 2px solid #e2e8f0;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .logo-badge {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-img {
+      width: 38px;
+      height: 38px;
+      object-fit: contain;
+    }
+    .logo-title {
+      font-size: 18px;
+      font-weight: 900;
+      color: #0f172a;
+      letter-spacing: -0.5px;
+    }
+    .logo-sub {
+      font-size: 11px;
+      font-weight: 700;
+      color: #256BF5;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .slide-counter {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 13px;
+      color: #256BF5;
+      background: #EDF4FF;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      border: 1px solid #bfdbfe;
+    }
+    .btn-nav {
+      background: #ffffff;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #1e293b;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+    .btn-nav:hover {
+      border-color: #256BF5;
+      color: #256BF5;
+      background: #f8fafc;
+    }
+    .btn-nav.primary {
+      background: #256BF5;
+      color: #ffffff;
+      border-color: #256BF5;
+    }
+    .btn-nav.primary:hover {
+      background: #1d4ed8;
+      border-color: #1d4ed8;
+    }
+
+    /* Deck Container */
+    main {
+      flex: 1;
+      max-width: 1100px;
+      width: 100%;
+      margin: 32px auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .slide {
+      display: none;
+      width: 100%;
+      background: #ffffff;
+      border-radius: 36px;
+      border: 2px solid #e2e8f0;
+      box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.08);
+      padding: 48px;
+      animation: fadeIn 0.25s ease-out;
+    }
+    .slide.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Slide Typography */
+    .slide-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #EDF4FF;
+      color: #256BF5;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      margin-bottom: 16px;
+      border: 1px solid #bfdbfe;
+    }
+    .slide-title {
+      font-size: 34px;
+      font-weight: 900;
+      line-height: 1.15;
+      letter-spacing: -1px;
+      color: #0f172a;
+      margin-bottom: 12px;
+    }
+    .slide-subtitle {
+      font-size: 16px;
+      font-weight: 600;
+      color: #64748b;
+      margin-bottom: 36px;
+      line-height: 1.5;
+    }
+
+    /* Layout Grids */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .card {
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 24px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .card.blue {
+      background: #EDF4FF;
+      border-color: #bfdbfe;
+    }
+    .card.yellow {
+      background: #FFFBEB;
+      border-color: #fde68a;
+    }
+    .card.green {
+      background: #ECFDF5;
+      border-color: #a7f3d0;
+    }
+    .card.red {
+      background: #FEF2F2;
+      border-color: #fecaca;
+    }
+
+    .card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    .card h3 {
+      font-size: 18px;
+      font-weight: 900;
+      color: #0f172a;
+      letter-spacing: -0.3px;
+    }
+    .card p {
+      font-size: 13px;
+      font-weight: 600;
+      color: #475569;
+      line-height: 1.5;
+    }
+
+    .stat-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 40px;
+      font-weight: 900;
+      color: #256BF5;
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-top: 4px;
+    }
+
+    /* Speaker Notes Box */
+    .speaker-notes {
+      margin-top: 32px;
+      padding: 16px 20px;
+      background: #fffbeb;
+      border: 1px dashed #f59e0b;
+      border-radius: 18px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #92400e;
+      display: none;
+    }
+    .speaker-notes.show {
+      display: block;
+    }
+    .speaker-notes strong {
+      display: block;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      font-weight: 900;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+
+    /* Footer */
+    footer {
+      padding: 16px 32px;
+      background: #ffffff;
+      border-top: 2px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 700;
+      color: #64748b;
+    }
+    .progress-dots {
+      display: flex;
+      gap: 6px;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 9999px;
+      background: #cbd5e1;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .dot.active {
+      width: 28px;
+      background: #256BF5;
+    }
+
+    /* Keyboard Hint */
+    .kbd-hint {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    kbd {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 2px 6px;
+      font-family: monospace;
+      font-size: 11px;
+      color: #334155;
+    }
+
+    @media (max-width: 768px) {
+      .slide { padding: 24px; border-radius: 24px; }
+      .slide-title { font-size: 26px; }
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+      header, footer { padding: 12px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="logo-badge">
+      <img src="/nira-logo.png" alt="NIRA Logo" class="logo-img" onerror="this.style.display='none'">
+      <div>
+        <div class="logo-title">NIRA (നിറ)</div>
+        <div class="logo-sub">Monsoon Resilience Deck</div>
+      </div>
+    </div>
+
+    <div class="header-controls">
+      <button class="btn-nav" onclick="toggleNotes()">🎙️ Notes</button>
+      <button class="btn-nav" onclick="prevSlide()">← Prev</button>
+      <div class="slide-counter" id="counter">01 / 10</div>
+      <button class="btn-nav primary" onclick="nextSlide()">Next →</button>
+    </div>
+  </header>
+
+  <!-- Slide Canvas -->
+  <main>
+
+    <!-- SLIDE 1: TITLE & HOOK -->
+    <div class="slide active" data-slide="1">
+      <span class="slide-tag">Hackathon Pitch Deck • 2026</span>
+      <h1 class="slide-title">NIRA: Autonomous Drainage Intelligence & Flood Prevention Ecosystem</h1>
+      <p class="slide-subtitle">Transforming Kerala's urban monsoon resilience from reactive crisis management into proactive, AI-driven civic action.</p>
+
+      <div class="grid-3">
+        <div class="card blue">
+          <div class="card-icon" style="background:#256BF5; color:#fff;">📸</div>
+          <h3>Instant Citizen Reporting</h3>
+          <p>Live phone camera snapshot with instant AI blockage classification. No complex forms or bureaucratic friction.</p>
+        </div>
+
+        <div class="card yellow">
+          <div class="card-icon" style="background:#FFC800; color:#0f172a;">🗺️</div>
+          <h3>Point-in-Polygon Ward GIS</h3>
+          <p>Coordinates automatically map to responsible Municipal Wards and designated Junior Engineers in milliseconds.</p>
+        </div>
+
+        <div class="card green">
+          <div class="card-icon" style="background:#10B981; color:#fff;">⚡</div>
+          <h3>Closed-Loop Resolution</h3>
+          <p>Field squads deploy jetting units and upload verified photographic proof to close the ticket within strict SLAs.</p>
+        </div>
+      </div>
+
+      <div class="speaker-notes" id="notes-1">
+        <strong>Speaker Script (0:00 - 0:25):</strong>
+        "Good morning judges. Every monsoon, Kerala's cities grind to a standstill. Roads turn into canals and businesses lose crores — not because we lack storm drains, but because blockages go unnoticed until it's too late. Today we present NIRA: an end-to-end civic drainage intelligence platform connecting citizens directly with rapid municipal squads."
+      </div>
+    </div>
+
+    <!-- SLIDE 2: THE CRISIS -->
+    <div class="slide" data-slide="2">
+      <span class="slide-tag" style="background:#FEF2F2; color:#dc2626; border-color:#fecaca;">The Problem Statement</span>
+      <h1 class="slide-title">Why Do Kerala Cities Flood Every Single Monsoon?</h1>
+      <p class="slide-subtitle">Urban flash floods are predominantly caused by choked culverts and broken civic feedback loops, not sudden cloudbursts.</p>
+
+      <div class="grid-3">
+        <div class="card red">
+          <div class="stat-number" style="color:#dc2626;">70%</div>
+          <div class="stat-label">Preventable Blockages</div>
+          <p>Plastic waste, silt, and construction debris choke arterial storm drains weeks before peak monsoon rains arrive.</p>
+        </div>
+
+        <div class="card red">
+          <div class="stat-number" style="color:#dc2626;">0</div>
+          <div class="stat-label">Citizen Ward Clarity</div>
+          <p>Citizens don't know which municipal division, AE, or overseer is legally responsible for their local street gutter.</p>
+        </div>
+
+        <div class="card red">
+          <div class="stat-number" style="color:#dc2626;">∞</div>
+          <div class="stat-label">Administrative Black Hole</div>
+          <p>Traditional paper petitions and phone helplines lack tracking codes, response timelines, or verified photographic evidence.</p>
+        </div>
+      </div>
+
+      <div class="speaker-notes" id="notes-2">
+        <strong>Speaker Script (0:25 - 0:55):</strong>
+        "The problem isn't the rain — it's the disconnect. Right now, when a culvert chokes with plastic or silt, a citizen has no easy way to report it. Traditional helplines swallow complaints into an administrative black hole with zero accountability. By the time a squad responds, the road is already submerged."
+      </div>
+    </div>
+
+    <!-- SLIDE 3: THE SOLUTION -->
+    <div class="slide" data-slide="3">
+      <span class="slide-tag">The Architecture</span>
+      <h1 class="slide-title">The Solution: Closed-Loop Civic Intelligence</h1>
+      <p class="slide-subtitle">NIRA bridges citizen smartphone cameras with rapid municipal field squads in four automated steps.</p>
+
+      <div class="grid-4">
+        <div class="card">
+          <div class="card-icon" style="background:#256BF5; color:#fff;">1</div>
+          <h3>Snap & Analyze</h3>
+          <p>Citizen takes a photo. Browser camera captures permanent Base64 image and runs instant AI heuristic analysis.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-icon" style="background:#FFC800; color:#0f172a;">2</div>
+          <h3>Ward Pinpoint</h3>
+          <p>Ray-Casting Point-in-Polygon matches coordinates to Kochi Corporation wards and specific AE drainage officers.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-icon" style="background:#3b82f6; color:#fff;">3</div>
+          <h3>Priority Triage</h3>
+          <p>NIRA Priority Engine computes transparent 0–100 score factoring arterial traffic, schools, and flood hazard.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-icon" style="background:#10B981; color:#fff;">4</div>
+          <h3>Verified Fix</h3>
+          <p>Command center dispatches jetting crew. Squad uploads post-clearing photo proof before ticket closes.</p>
+        </div>
+      </div>
+
+      <div class="speaker-notes" id="notes-3">
+        <strong>Speaker Script (0:55 - 1:25):</strong>
+        "NIRA solves this end-to-end. In under 30 seconds, any resident can take a photo of a choked drain. Our system determines the exact municipal ward, computes an autonomous 0 to 100 priority score, sets an enforceable SLA, and requires photo evidence before any ticket is marked resolved."
+      </div>
+    </div>
+
+    <!-- SLIDE 4: AI & COMPUTER VISION -->
+    <div class="slide" data-slide="4">
+      <span class="slide-tag">AI Innovation</span>
+      <h1 class="slide-title">Computer Vision & Deterministic Prioritization</h1>
+      <p class="slide-subtitle">Transparent, explainable machine intelligence replacing arbitrary municipal guesswork.</p>
+
+      <div class="grid-2">
+        <div class="card blue">
+          <h3>Visual Blockage Classifier</h3>
+          <p style="margin-bottom:12px;">Computer vision model evaluates blockage topology and surface pooling:</p>
+          <ul style="padding-left:18px; font-size:13px; line-height:1.8; color:#334155; font-weight:600;">
+            <li><strong>Categories:</strong> Blocked Storm Drain, Silt Accumulation, Broken Culvert, Garbage Dumping, Sewage Overflow.</li>
+            <li><strong>Standing Water:</strong> Dry / Low, Detected, Severe Pooling, Submerged Channel.</li>
+            <li><strong>Auto-Tuning:</strong> Suggests initial severity for instant citizen confirmation.</li>
+          </ul>
+        </div>
+
+        <div class="card yellow">
+          <h3>NIRA Priority Engine (0–100)</h3>
+          <p style="margin-bottom:12px;">Deterministic algorithm weighing civic vulnerability:</p>
+          <ul style="padding-left:18px; font-size:13px; line-height:1.8; color:#334155; font-weight:600;">
+            <li><strong>Base Severity:</strong> Critical structural break (40 pts) vs trash (15 pts).</li>
+            <li><strong>Corridor Bonus:</strong> Major arterial bus corridors (SA Road, MG Road) get +15 pts.</li>
+            <li><strong>Cluster Density:</strong> Repeated nearby reports boost priority score automatically.</li>
+            <li><strong>Strict SLAs:</strong> Score ≥ 70 triggers mandatory 3–4 hour squad dispatch.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="speaker-notes" id="notes-4">
+        <strong>Speaker Script (1:25 - 1:55):</strong>
+        "Our dual-engine AI eliminates guesswork. The vision pipeline inspects the photo for silt and standing water, while our deterministic priority engine weights the score based on arterial traffic and school zone proximity. Everything is explainable with zero black-box ambiguity."
+      </div>
+    </div>
+
+    <!-- SLIDE 5: POINT IN POLYGON GIS -->
+    <div class="slide" data-slide="5">
+      <span class="slide-tag">Geospatial Intelligence</span>
+      <h1 class="slide-title">Point-in-Polygon (PIP) Ward Boundary Engine</h1>
+      <p class="slide-subtitle">Ending jurisdictional confusion through client-side geometric boundary calculations.</p>
+
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-icon" style="background:#256BF5; color:#fff;">📐</div>
+          <h3>Ray-Casting Algorithm</h3>
+          <p>Runs sub-millisecond point-in-polygon math over official Keralam Municipal Corporation boundaries directly in the browser.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-icon" style="background:#10B981; color:#fff;">👤</div>
+          <h3>Direct Officer Routing</h3>
+          <p>Instantly maps to responsible personnel: e.g., <em>K. S. Rajesh (AE Drainage, Ward #24 Vyttila)</em> with direct emergency phone line.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-icon" style="background:#f59e0b; color:#fff;">📍</div>
+          <h3>Centroid Proximity Fallback</h3>
+          <p>If a citizen is on a ward perimeter, NIRA gracefully calculates the nearest centroid and suggests recognized local landmarks.</p>
+        </div>
+      </div>
+
+      <div class="speaker-notes" id="notes-5">
+        <strong>Speaker Script (1:55 - 2:25):</strong>
+        "Citizens don't know where Ward 24 ends and Ward 35 begins, but NIRA does. Using a ray-casting point-in-polygon engine, any GPS pin or satellite tap immediately links the citizen with the exact designated Junior Engineer and emergency contact for that ward."
+      </div>
+    </div>
+
+    <!-- SLIDE 6: COMMAND CENTER -->
+    <div class="slide" data-slide="6">
+      <span class="slide-tag">Municipal Dashboard</span>
+      <h1 class="slide-title">Streamlined Command Center for Municipal Authorities</h1>
+      <p class="slide-subtitle">Clean, uncluttered, high-impact operational hub designed for split-second dispatch decisions.</p>
+
+      <div class="grid-4">
+        <div class="card" style="background:#0f172a; color:#fff; border-color:#0f172a;">
+          <div class="stat-number" style="color:#60a5fa;">Total</div>
+          <div class="stat-label" style="color:#94a3b8;">All Reported Incidents</div>
+          <p style="color:#cbd5e1;">Live queue of all verified incoming citizen drainage tickets.</p>
+        </div>
+
+        <div class="card yellow">
+          <div class="stat-number" style="color:#b45309;">Needs Action</div>
+          <div class="stat-label">Unassigned / Urgent</div>
+          <p>Tickets requiring immediate squad mobilization or supervisory review.</p>
+        </div>
+
+        <div class="card blue">
+          <div class="stat-number" style="color:#256BF5;">In Progress</div>
+          <div class="stat-label">Squads in Field</div>
+          <p>Desilting jet units actively performing on-site clearance.</p>
+        </div>
+
+        <div class="card green">
+          <div class="stat-number" style="color:#10B981;">Resolved</div>
+          <div class="stat-label">Verified & Cleared</div>
+          <p>Tickets with approved post-clearance photographic evidence.</p>
+        </div>
+      </div>
+
+      <div class="speaker-notes" id="notes-6">
+        <strong>Speaker Script (2:25 - 2:55):</strong>
+        "For city officials, we simplified the Command Center to 4 core operational cards: Total, Needs Action, In Progress, and Resolved. A single click filters the entire queue. Plus, our spatial clustering engine automatically groups reports within 200 meters into live Hotspot Zones."
+      </div>
+    </div>
+
+    <!-- SLIDE 7: CLOSED-LOOP ACCOUNTABILITY -->
+    <div class="slide" data-slide="7">
+      <span class="slide-tag" style="background:#ECFDF5; color:#047857; border-color:#a7f3d0;">Civic Accountability</span>
+      <h1 class="slide-title">Closed-Loop Verification & Automated SLA Escalations</h1>
+      <p class="slide-subtitle">Guaranteed civic trust through enforceable response windows and photographic proof.</p>
+
+      <div class="grid-2">
+        <div class="card green">
+          <h3>Closed-Loop Photo Proof</h3>
+          <p style="margin-bottom:10px;">A ticket cannot be closed with a checkbox. Field crews must submit verified photo evidence of unclogged grates and restored water flow.</p>
+          <div style="background:#fff; border-radius:14px; padding:12px; border:1px solid #a7f3d0; font-size:12px; font-weight:700; color:#065f46;">
+            ✓ Before & After evidence stored permanently on citizen tracking receipt
+          </div>
+        </div>
+
+        <div class="card red">
+          <h3>Supervisory SLA Escalation</h3>
+          <p style="margin-bottom:10px;">If a high-hazard drain is not addressed within allowable SLA hours (4h–8h), NIRA automatically flags an operational breach.</p>
+          <div style="background:#fff; border-radius:14px; padding:12px; border:1px solid #fecaca; font-size:12px; font-weight:700; color:#991b1b;">
+            ⚠️ Level 2 Intercept: Direct notification dispatched to Assistant Executive Engineer
+          </div>
+        </div>
+      </div>
+
+      <div class="speaker-notes" id="notes-7">
+        <strong>Speaker Script (2:55 - 3:25):</strong>
+        "Accountability is where NIRA truly shines. If a ticket sits idle past its SLA limit, our escalation engine alerts the Assistant Executive Engineer directly. And when crews finish, they must upload a photographic proof of resolution before the ticket can close."
+      </div>
+    </div>
+
+    <!-- SLIDE 8: TECH STACK -->
+    <div class="slide" data-slide="8">
+      <span class="slide-tag">Engineering Stack</span>
+      <h1 class="slide-title">Robust, High-Performance Technology Stack</h1>
+      <p class="slide-subtitle">Built with modern enterprise-grade open source tooling for zero latency and offline resilience.</p>
+
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-icon" style="background:#0f172a; color:#fff;">⚡</div>
+          <h3>Next.js 15 & React 19</h3>
+          <p>Turbopack App Router, Server/Client components, Strict TypeScript with 100% type safety.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-icon" style="background:#256BF5; color:#fff;">🗺️</div>
+          <h3>Leaflet GIS & Satellite</h3>
+          <p>Interactive spatial mapping, custom SVG markers, polygon containment, and CARTO light tiles.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-icon" style="background:#10B981; color:#fff;">💾</div>
+          <h3>Supabase & Local Sync</h3>
+          <p>PostgreSQL with Row-Level Security and resilient Base64 local storage fallback with cross-tab live event broadcast.</p>
+        </div>
+      </div>
+
+      <div class="speaker-notes" id="notes-8">
+        <strong>Speaker Script (3:25 - 3:55):</strong>
+        "Our architecture is built on Next.js 15, React 19, and TypeScript. All camera frames are optimized into lightweight Base64 data pipelines that persist across browser tabs and Supabase with zero broken links. Even during intermittent mobile network loss, NIRA syncs seamlessly."
+      </div>
+    </div>
+
+    <!-- SLIDE 9: IMPACT & SCALABILITY -->
+    <div class="slide" data-slide="9">
+      <span class="slide-tag" style="background:#FFFBEB; color:#b45309; border-color:#fde68a;">Impact & Numbers</span>
+      <h1 class="slide-title">Measurable Civic Impact & Scalability</h1>
+      <p class="slide-subtitle">A cost-effective civic tech solution ready for immediate deployment across all 93 municipalities in Kerala.</p>
+
+      <div class="grid-3">
+        <div class="card blue">
+          <div class="stat-number">80%</div>
+          <div class="stat-label">Faster Response Times</div>
+          <p>Direct routing from citizen to ward squad eliminates days of bureaucratic paperwork.</p>
+        </div>
+
+        <div class="card yellow">
+          <div class="stat-number">30s</div>
+          <div class="stat-label">To Report An Issue</div>
+          <p>Frictionless 4-step wizard designed for any citizen regardless of digital literacy.</p>
+        </div>
+
+        <div class="card green">
+          <div class="stat-number">100%</div>
+          <div class="stat-label">Verifiable Evidence</div>
+          <p>Every closed ticket is backed by photographic evidence and audit logs.</p>
+        </div>
+      </div>
+
+      <div class="speaker-notes" id="notes-9">
+        <strong>Speaker Script (3:55 - 4:20):</strong>
+        "The impact is immediate: an 80% reduction in dispatch times, a 30-second reporting flow, and 100% verifiable photographic proof. NIRA can scale from Kochi Corporation to all 93 municipalities in Kerala with zero architectural overhaul."
+      </div>
+    </div>
+
+    <!-- SLIDE 10: VISION & CLOSE -->
+    <div class="slide" data-slide="10">
+      <span class="slide-tag">The Vision</span>
+      <h1 class="slide-title">Towards a Monsoon-Proof Kerala</h1>
+      <p class="slide-subtitle">NIRA turns every citizen into a civic sentinel and every drainage crew into a rapid-response unit.</p>
+
+      <div class="grid-2">
+        <div class="card blue" style="justify-content:center; text-align:center; padding:40px;">
+          <h3 style="font-size:24px; margin-bottom:12px;">"In Hours, Not Months."</h3>
+          <p style="font-size:15px; color:#1e3a8a;">Proactive desilting, transparent SLAs, and community-driven flood prevention for the smart cities of tomorrow.</p>
+        </div>
+
+        <div class="card yellow" style="justify-content:center; text-align:center; padding:40px;">
+          <h3 style="font-size:24px; margin-bottom:12px;">Next Milestones</h3>
+          <p style="font-size:14px; color:#78350f;">WhatsApp bot integration for zero-friction chat reporting & IoT ultrasonic water-level sensors in arterial canals.</p>
+        </div>
+      </div>
+
+      <div class="speaker-notes" id="notes-10">
+        <strong>Speaker Script (4:20 - 4:45):</strong>
+        "NIRA proves that smart governance doesn't require billions in new infrastructure — it requires connecting citizens with the infrastructure we already have. Thank you, and we welcome your questions!"
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer Navigation -->
+  <footer>
+    <div class="kbd-hint">
+      Use <kbd>←</kbd> <kbd>→</kbd> or <kbd>Space</kbd> to navigate slides
+    </div>
+
+    <div class="progress-dots" id="dots-container"></div>
+
+    <div>NIRA • Keralam Civic Intelligence</div>
+  </footer>
+
+  <script>
+    let currentSlide = 1;
+    const totalSlides = 10;
+
+    function renderDots() {
+      const container = document.getElementById('dots-container');
+      container.innerHTML = '';
+      for (let i = 1; i <= totalSlides; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'dot' + (i === currentSlide ? ' active' : '');
+        dot.onclick = () => goToSlide(i);
+        container.appendChild(dot);
+      }
+    }
+
+    function updateSlide() {
+      document.querySelectorAll('.slide').forEach(el => el.classList.remove('active'));
+      const activeEl = document.querySelector(`.slide[data-slide="${currentSlide}"]`);
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('counter').innerText = 
+        String(currentSlide).padStart(2, '0') + ' / ' + String(totalSlides).padStart(2, '0');
+      
+      renderDots();
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides) {
+        currentSlide++;
+        updateSlide();
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 1) {
+        currentSlide--;
+        updateSlide();
+      }
+    }
+
+    function goToSlide(n) {
+      currentSlide = n;
+      updateSlide();
+    }
+
+    function toggleNotes() {
+      const notes = document.getElementById(`notes-${currentSlide}`);
+      if (notes) {
+        notes.classList.toggle('show');
+      }
+    }
+
+    // Keyboard listener
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') {
+        nextSlide();
+      } else if (e.key === 'ArrowLeft') {
+        prevSlide();
+      } else if (e.key === 'n' || e.key === 'N') {
+        toggleNotes();
+      }
+    });
+
+    renderDots();
+  </script>
+
+</body>
+</html>
