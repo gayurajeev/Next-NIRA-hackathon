@@ -32,6 +32,9 @@ import {
   FastForward,
   RotateCcw,
   Zap,
+  ChevronDown,
+  ChevronUp,
+  SlidersHorizontal,
 } from 'lucide-react';
 import {
   evaluateSla,
@@ -87,6 +90,8 @@ export const AuthorityCommandCenter: React.FC<AuthorityCommandCenterProps> = ({
   const [kpiFilter, setKpiFilter] = useState<KpiFilter>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortBy, setSortBy] = useState<'priority' | 'sla' | 'newest'>('priority');
+  const [activeTab, setActiveTab] = useState<'queue' | 'hotspots'>('queue');
+  const [isSimulatorOpen, setIsSimulatorOpen] = useState<boolean>(false);
 
   // Selected Ticket for Slide-Over Detailed Side Panel
   const [selectedTicket, setSelectedTicket] = useState<DrainageReport | null>(null);
@@ -393,758 +398,423 @@ export const AuthorityCommandCenter: React.FC<AuthorityCommandCenterProps> = ({
   };
 
   return (
-    <div className="space-y-8 animate-fadeIn">
-      {/* 1. HEADER BAR */}
-      <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-200">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 flex items-center justify-center shrink-0 overflow-hidden">
+    <div className="space-y-6 animate-fadeIn">
+      {/* 1. CLEAN HEADER BAR */}
+      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 flex items-center justify-center shrink-0 overflow-hidden">
             <img src="/nira-logo.png" alt="NIRA Logo" className="w-full h-full object-contain mix-blend-multiply" />
           </div>
           <div>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              Keralam Municipal Command Center
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              Municipal Command Center
             </h2>
-            <p className="text-xs sm:text-sm text-slate-600 font-medium mt-1">
-              Drainage Operations, Live SLA Monitoring, Hotspot Clusters & Rapid Crew Dispatch
+            <p className="text-xs text-slate-500 font-medium">
+              Monitor incoming reports, assign field crews, and track issue resolutions
             </p>
           </div>
         </div>
 
-        {/* Authority Login Quick Access */}
-        <div className="flex items-center gap-3">
-          {!isAuthority ? (
-            <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 px-4 py-2 rounded-2xl text-xs">
-              <span className="font-bold text-amber-900">
-                Municipal Operations Authentication Required
-              </span>
-              <button
-                type="button"
-                onClick={() => (onOpenAuthModal ? onOpenAuthModal() : null)}
-                className="px-3.5 py-1.5 rounded-xl bg-[#FFC800] hover:bg-amber-400 text-slate-950 font-black text-xs shadow-xs transition-all flex items-center gap-1.5"
-              >
-                <Building2 className="w-3.5 h-3.5" />
-                <span>Officer Log In</span>
-              </button>
+        {/* Right Header Actions: Authority Badge + Subtle Demo Simulator Toggle */}
+        <div className="flex items-center flex-wrap gap-2.5">
+          {isAuthority ? (
+            <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-800">
+              <CheckCircle className="w-3.5 h-3.5 text-[#10B981]" />
+              <span>Officer: {user?.email?.split('@')[0]}</span>
             </div>
           ) : (
-            <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-2xl text-xs font-bold text-emerald-800">
-              <CheckCircle className="w-4 h-4 text-[#10B981]" />
-              <span>Logged in as Municipal Authority ({user?.email})</span>
-            </div>
+            <button
+              type="button"
+              onClick={() => (onOpenAuthModal ? onOpenAuthModal() : null)}
+              className="px-3.5 py-1.5 rounded-xl bg-[#FFC800] hover:bg-amber-400 text-slate-950 font-black text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <Building2 className="w-3.5 h-3.5" />
+              <span>Officer Sign In</span>
+            </button>
+          )}
+
+          {/* Collapsible Demo Controls Toggle */}
+          {isAuthority && (
+            <button
+              type="button"
+              onClick={() => setIsSimulatorOpen(!isSimulatorOpen)}
+              className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                isSimulatorOpen || demoClockOffsetHours > 0
+                  ? 'bg-amber-50 border-amber-300 text-amber-900 font-black'
+                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <Timer className="w-3.5 h-3.5 text-amber-600" />
+              <span>Demo Clock {demoClockOffsetHours > 0 ? `(+${demoClockOffsetHours}h)` : ''}</span>
+              {isSimulatorOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
           )}
         </div>
       </div>
 
-      {/* ========================================================================= */}
-      {/* 1B. SLA & ESCALATION DEMO CONTROLS (AUTHENTICATED AUTHORITY DASHBOARD ONLY) */}
-      {/* ========================================================================= */}
-      {isAuthority && (
-        <div className="p-5 rounded-3xl bg-amber-50/90 border-2 border-amber-300 space-y-3 shadow-xs animate-fadeIn">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-2xl bg-[#FFC800] text-slate-950 flex items-center justify-center font-black shadow-xs">
-                <Timer className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-black text-slate-900 tracking-tight">
-                  SLA Engine Demo Controls (Simulation Sandbox)
-                </h4>
-                <p className="text-xs text-slate-600 font-medium">
-                  Test time-based SLA thresholds (High/Crit: 4h, Med: 8h, Low: 24h) and trigger automated supervisory escalations.
-                </p>
-              </div>
-            </div>
-
+      {/* 1B. COLLAPSIBLE DEMO CONTROLS (EXPANDS ONLY WHEN REQUESTED) */}
+      {isAuthority && isSimulatorOpen && (
+        <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-200 shadow-xs flex flex-wrap items-center justify-between gap-3 animate-fadeIn">
+          <div className="space-y-0.5">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-black px-3 py-1 rounded-xl bg-white border border-amber-200 text-amber-900 shadow-2xs">
-                Simulated Offset: +{demoClockOffsetHours}h ({new Date(simulatedNowMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})
+              <span className="text-xs font-black text-amber-950 uppercase tracking-wide">
+                Simulation Sandbox
+              </span>
+              <span className="text-[11px] font-mono font-bold text-amber-800 bg-white px-2 py-0.5 rounded-md border border-amber-200">
+                Offset: +{demoClockOffsetHours}h ({new Date(simulatedNowMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})
               </span>
             </div>
+            <p className="text-[11px] text-amber-800/80 font-medium">
+              Simulate elapsed time to test automated SLA alerts and supervisory escalation.
+            </p>
           </div>
 
-          {/* Action Buttons: +1h, +4h, +8h, Trigger SLA breach */}
-          <div className="flex flex-wrap items-center gap-2 pt-1">
+          <div className="flex items-center flex-wrap gap-2">
             <button
               type="button"
               onClick={() => setDemoClockOffsetHours(prev => prev + 1)}
-              className="px-3 py-1.5 rounded-xl bg-white hover:bg-amber-100 border border-amber-300 text-slate-900 text-xs font-black shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
+              className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-amber-100 border border-amber-300 text-slate-900 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
             >
-              <FastForward className="w-3.5 h-3.5 text-amber-600" />
-              <span>+1 hour</span>
+              <FastForward className="w-3 h-3 text-amber-600" />
+              <span>+1h</span>
             </button>
-
             <button
               type="button"
               onClick={() => setDemoClockOffsetHours(prev => prev + 4)}
-              className="px-3 py-1.5 rounded-xl bg-white hover:bg-amber-100 border border-amber-300 text-slate-900 text-xs font-black shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
+              className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-amber-100 border border-amber-300 text-slate-900 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
             >
-              <FastForward className="w-3.5 h-3.5 text-amber-600" />
-              <span>+4 hours</span>
+              <FastForward className="w-3 h-3 text-amber-600" />
+              <span>+4h</span>
             </button>
-
-            <button
-              type="button"
-              onClick={() => setDemoClockOffsetHours(prev => prev + 8)}
-              className="px-3 py-1.5 rounded-xl bg-white hover:bg-amber-100 border border-amber-300 text-slate-900 text-xs font-black shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
-            >
-              <FastForward className="w-3.5 h-3.5 text-amber-600" />
-              <span>+8 hours</span>
-            </button>
-
             <button
               type="button"
               onClick={handleTriggerSlaBreach}
-              className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-black shadow-md shadow-red-500/20 transition-all flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
+              className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-black transition-all flex items-center gap-1 cursor-pointer shadow-xs"
             >
-              <Zap className="w-3.5 h-3.5 text-[#FFC800]" />
-              <span>Trigger SLA breach</span>
+              <Zap className="w-3 h-3 text-[#FFC800]" />
+              <span>Trigger SLA Breach</span>
             </button>
-
             {demoClockOffsetHours > 0 && (
               <button
                 type="button"
                 onClick={() => setDemoClockOffsetHours(0)}
-                className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black transition-all flex items-center gap-1 cursor-pointer"
+                className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Reset (0h)</span>
+                <RotateCcw className="w-3 h-3" />
+                <span>Reset</span>
               </button>
             )}
           </div>
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* 1C. SLA BREACHED WARNING CALLOUT (VISIBLE WARNING IN COMMAND CENTER)      */}
-      {/* ========================================================================= */}
-      {breachedReports.length > 0 && (
-        <div className="p-5 sm:p-6 rounded-3xl bg-red-50 border-2 border-red-300 text-red-950 space-y-4 shadow-sm animate-fadeIn">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-2xl bg-[#EF4444] text-white flex items-center justify-center font-black shadow-md shadow-red-500/20">
-                <AlertOctagon className="w-5 h-5 animate-pulse" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-base font-black text-red-950 uppercase tracking-tight">
-                    SLA BREACHED — SUPERVISORY ESCALATION REQUIRED
-                  </h3>
-                  <span className="px-2 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-black uppercase">
-                    Level 2 Intercept
-                  </span>
-                </div>
-                <p className="text-xs text-red-800 font-medium mt-0.5">
-                  The following active ticket(s) have exceeded allowable municipal SLA response windows without verified resolution.
-                </p>
-              </div>
-            </div>
-
-            <span className="text-xs font-mono font-black text-red-700 bg-red-100 px-3 py-1 rounded-xl border border-red-200">
-              {breachedReports.length} Breached / Escalated
+      {/* 2. FOUR ESSENTIAL KPI STATS (ACT AS 1-CLICK QUICK FILTERS) */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        {/* Card 1: All Reports */}
+        <button
+          type="button"
+          onClick={() => {
+            setKpiFilter('ALL');
+            setActiveTab('queue');
+          }}
+          className={`p-4 sm:p-5 rounded-2xl text-left border-2 transition-all cursor-pointer ${
+            kpiFilter === 'ALL' && activeTab === 'queue'
+              ? 'bg-slate-900 text-white border-slate-900 shadow-md'
+              : 'bg-white text-slate-900 border-slate-200 hover:border-slate-300 hover:shadow-xs'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className={`text-[10px] sm:text-xs font-black uppercase tracking-wider ${
+              kpiFilter === 'ALL' && activeTab === 'queue' ? 'text-slate-300' : 'text-slate-500'
+            }`}>
+              Total Reports
             </span>
+            <Activity className={`w-4 h-4 ${kpiFilter === 'ALL' && activeTab === 'queue' ? 'text-slate-300' : 'text-slate-400'}`} />
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-            {breachedReports.slice(0, 2).map(rep => {
-              const sla = getSlaInfo(rep);
-              return (
-                <div
-                  key={rep.id}
-                  className="p-4 rounded-2xl bg-white border-2 border-red-200 shadow-xs space-y-3"
-                >
-                  <div className="flex justify-between items-center border-b border-red-100 pb-2">
-                    <span className="font-mono font-black text-[#256BF5] text-sm">{rep.ticket_code}</span>
-                    <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 font-black text-[10px] uppercase animate-pulse">
-                      SLA BREACHED
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                      <span className="text-slate-400 font-bold block text-[10px] uppercase">Ward:</span>
-                      <strong className="text-slate-900 font-black">{rep.ward} (Ward #{rep.ward_number})</strong>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 font-bold block text-[10px] uppercase">Elapsed vs SLA:</span>
-                      <strong className="text-red-600 font-black">
-                        Elapsed: {sla.elapsedFormatted} • SLA: {sla.slaLimitHours}h
-                      </strong>
-                    </div>
-                  </div>
-
-                  {/* Formatted Escalation Levels: Level 1 -> Level 2 */}
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1">
-                    <span className="text-[10px] font-black uppercase text-slate-500 block">
-                      Escalation Routing:
-                    </span>
-                    <div className="flex items-center gap-2 font-bold text-slate-800">
-                      <span className="text-slate-600">Level 1 → Ward Response Team</span>
-                      <ArrowRight className="w-3.5 h-3.5 text-red-600 flex-shrink-0" />
-                      <span className="text-red-700 font-black">Level 2 → Supervisory Officer</span>
-                    </div>
-                    <p className="text-[10px] text-slate-500 italic mt-1">
-                      Assigned: {rep.assigned_officer || 'Assistant Executive Engineer (AEE - Central Operations)'}
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTicket(rep)}
-                    className="w-full py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-xs transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
-                  >
-                    <span>Inspect Diagnostic Panel & Direct Crew</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              );
-            })}
+          <div className="text-2xl sm:text-3xl font-black font-mono mt-1.5">
+            {totalReportsCount}
           </div>
+          <span className={`text-[10px] sm:text-[11px] font-medium block mt-1 ${
+            kpiFilter === 'ALL' && activeTab === 'queue' ? 'text-slate-300' : 'text-slate-400'
+          }`}>
+            All logged incidents
+          </span>
+        </button>
 
-          <p className="text-[10px] text-slate-500 italic">
-            * Prototype operational SLA model — Demonstrates automated administrative escalation. Does not claim connection to actual statutory KMC proceedings unless formally integrated.
-          </p>
+        {/* Card 2: Needs Action */}
+        <button
+          type="button"
+          onClick={() => {
+            setKpiFilter(kpiFilter === 'ATTENTION_NOW' ? 'ALL' : 'ATTENTION_NOW');
+            setActiveTab('queue');
+          }}
+          className={`p-4 sm:p-5 rounded-2xl text-left border-2 transition-all cursor-pointer ${
+            kpiFilter === 'ATTENTION_NOW' && activeTab === 'queue'
+              ? 'bg-[#FFC800] text-slate-950 border-amber-500 shadow-md ring-2 ring-amber-300'
+              : 'bg-white text-slate-900 border-slate-200 hover:border-amber-300 hover:shadow-xs'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-amber-800">
+              Needs Action
+            </span>
+            <AlertTriangle className="w-4 h-4 text-amber-600" />
+          </div>
+          <div className="text-2xl sm:text-3xl font-black font-mono mt-1.5 text-slate-950">
+            {attentionNowReports.length}
+          </div>
+          <span className="text-[10px] sm:text-[11px] font-medium text-amber-900/80 block mt-1">
+            Unassigned or high risk
+          </span>
+        </button>
+
+        {/* Card 3: In Progress */}
+        <button
+          type="button"
+          onClick={() => {
+            setKpiFilter(kpiFilter === 'IN_PROGRESS' ? 'ALL' : 'IN_PROGRESS');
+            setActiveTab('queue');
+          }}
+          className={`p-4 sm:p-5 rounded-2xl text-left border-2 transition-all cursor-pointer ${
+            kpiFilter === 'IN_PROGRESS' && activeTab === 'queue'
+              ? 'bg-[#256BF5] text-white border-blue-700 shadow-md ring-2 ring-blue-300'
+              : 'bg-white text-slate-900 border-slate-200 hover:border-blue-300 hover:shadow-xs'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className={`text-[10px] sm:text-xs font-black uppercase tracking-wider ${
+              kpiFilter === 'IN_PROGRESS' && activeTab === 'queue' ? 'text-blue-100' : 'text-blue-700'
+            }`}>
+              In Progress
+            </span>
+            <Users className={`w-4 h-4 ${kpiFilter === 'IN_PROGRESS' && activeTab === 'queue' ? 'text-blue-200' : 'text-[#256BF5]'}`} />
+          </div>
+          <div className="text-2xl sm:text-3xl font-black font-mono mt-1.5">
+            {inProgressCount}
+          </div>
+          <span className={`text-[10px] sm:text-[11px] font-medium block mt-1 ${
+            kpiFilter === 'IN_PROGRESS' && activeTab === 'queue' ? 'text-blue-200' : 'text-slate-400'
+          }`}>
+            Crews dispatched
+          </span>
+        </button>
+
+        {/* Card 4: Resolved */}
+        <button
+          type="button"
+          onClick={() => {
+            setKpiFilter(kpiFilter === 'RESOLVED' ? 'ALL' : 'RESOLVED');
+            setActiveTab('queue');
+          }}
+          className={`p-4 sm:p-5 rounded-2xl text-left border-2 transition-all cursor-pointer ${
+            kpiFilter === 'RESOLVED' && activeTab === 'queue'
+              ? 'bg-[#10B981] text-white border-emerald-700 shadow-md ring-2 ring-emerald-300'
+              : 'bg-white text-slate-900 border-slate-200 hover:border-emerald-300 hover:shadow-xs'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className={`text-[10px] sm:text-xs font-black uppercase tracking-wider ${
+              kpiFilter === 'RESOLVED' && activeTab === 'queue' ? 'text-emerald-100' : 'text-emerald-700'
+            }`}>
+              Resolved
+            </span>
+            <CheckCircle2 className={`w-4 h-4 ${kpiFilter === 'RESOLVED' && activeTab === 'queue' ? 'text-emerald-200' : 'text-[#10B981]'}`} />
+          </div>
+          <div className="text-2xl sm:text-3xl font-black font-mono mt-1.5">
+            {resolvedCount}
+          </div>
+          <span className={`text-[10px] sm:text-[11px] font-medium block mt-1 ${
+            kpiFilter === 'RESOLVED' && activeTab === 'queue' ? 'text-emerald-200' : 'text-slate-400'
+          }`}>
+            Completed & cleared
+          </span>
+        </button>
+      </div>
+
+      {/* 2B. CLEAN SINGLE-ROW SLA OVERDUE NOTIFICATION (ONLY WHEN BREACHES OCCUR) */}
+      {breachedReports.length > 0 && (
+        <div className="px-4 py-3 rounded-2xl bg-red-50 border border-red-200 flex flex-wrap items-center justify-between gap-3 animate-fadeIn">
+          <div className="flex items-center gap-2.5">
+            <AlertOctagon className="w-5 h-5 text-red-600 shrink-0 animate-pulse" />
+            <div>
+              <span className="text-xs sm:text-sm font-black text-red-950">
+                {breachedReports.length} {breachedReports.length === 1 ? 'ticket has' : 'tickets have'} exceeded municipal SLA response limits
+              </span>
+              <span className="text-[11px] text-red-800 block font-medium">
+                Requires supervisory intervention or priority crew assignment
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setKpiFilter(kpiFilter === 'BREACHED' ? 'ALL' : 'BREACHED');
+              setActiveTab('queue');
+            }}
+            className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-black transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+          >
+            <span>{kpiFilter === 'BREACHED' ? 'Show All Tickets' : 'Filter Overdue Tickets'}</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* 2. THE FOUR IMMEDIATE OPERATIONAL QUESTIONS (TRIAGE MATRIX)               */}
-      {/* ========================================================================= */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs font-black uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
-            <Activity className="w-4 h-4 text-[#256BF5]" /> Executive Operational Triage
-          </h3>
-          <span className="text-[11px] font-bold text-slate-600">
-            Live municipal status answering critical dispatch needs
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Question 1: What needs attention now? */}
-          <div
-            onClick={() => setKpiFilter(kpiFilter === 'ATTENTION_NOW' ? 'ALL' : 'ATTENTION_NOW')}
-            className={`p-5 rounded-3xl border-2 transition-all cursor-pointer relative ${
-              kpiFilter === 'ATTENTION_NOW'
-                ? 'bg-amber-50/80 border-[#FFC800] ring-4 ring-amber-300/40 shadow-md'
-                : 'bg-white border-slate-200 hover:border-amber-400 hover:shadow-sm'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full">
-                1. Needs Attention Now
-              </span>
-              <AlertTriangle className="w-4 h-4 text-amber-600" />
-            </div>
-            <div className="mt-3">
-              <div className="text-2xl sm:text-3xl font-black font-mono text-slate-900">
-                {attentionNowReports.length}
-              </div>
-              <p className="text-xs text-slate-600 font-bold mt-1 leading-snug">
-                {attentionNowReports.length > 0
-                  ? `${attentionNowReports.length} high/critical tickets unassigned or awaiting crew dispatch.`
-                  : 'All critical blockages currently assigned to active squads.'}
-              </p>
-            </div>
-            <div className="mt-3 text-[10px] font-black text-[#256BF5] flex items-center gap-1">
-              <span>{kpiFilter === 'ATTENTION_NOW' ? 'Filtering active' : 'Click to filter queue'}</span>
-              <ArrowRight className="w-3 h-3" />
-            </div>
-          </div>
-
-          {/* Question 2: Where are the problems? */}
-          <div
-            onClick={() => {
-              if (selectedWard === topProblemWard[0]) {
-                setSelectedWard('ALL');
-              } else {
-                setSelectedWard(topProblemWard[0]);
-              }
-            }}
-            className={`p-5 rounded-3xl border-2 transition-all cursor-pointer relative ${
-              selectedWard !== 'ALL'
-                ? 'bg-blue-50/80 border-[#256BF5] ring-4 ring-blue-300/40 shadow-md'
-                : 'bg-white border-slate-200 hover:border-blue-400 hover:shadow-sm'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-wider text-blue-700 bg-blue-100 px-2.5 py-0.5 rounded-full">
-                2. Where are Problems?
-              </span>
-              <MapPin className="w-4 h-4 text-[#256BF5]" />
-            </div>
-            <div className="mt-3">
-              <div className="text-lg font-black text-slate-900 truncate">
-                {topProblemWard[0]}
-              </div>
-              <p className="text-xs text-slate-600 font-bold mt-1 leading-snug">
-                {topProblemWard[1]} active tickets in ward • {hotspots.length} recurrent flood hotspots detected.
-              </p>
-            </div>
-            <div className="mt-3 text-[10px] font-black text-[#256BF5] flex items-center gap-1">
-              <span>{selectedWard !== 'ALL' ? `Filtering Ward ${selectedWard}` : 'Filter top problem ward'}</span>
-              <ArrowRight className="w-3 h-3" />
-            </div>
-          </div>
-
-          {/* Question 3: Which tickets are approaching SLA? */}
-          <div
-            onClick={() => setKpiFilter(kpiFilter === 'APPROACHING_SLA' ? 'ALL' : 'APPROACHING_SLA')}
-            className={`p-5 rounded-3xl border-2 transition-all cursor-pointer relative ${
-              kpiFilter === 'APPROACHING_SLA'
-                ? 'bg-orange-50/80 border-orange-500 ring-4 ring-orange-300/40 shadow-md'
-                : 'bg-white border-slate-200 hover:border-orange-400 hover:shadow-sm'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-wider text-orange-800 bg-orange-100 px-2.5 py-0.5 rounded-full">
-                3. Approaching SLA
-              </span>
-              <Clock className="w-4 h-4 text-orange-600" />
-            </div>
-            <div className="mt-3">
-              <div className="text-2xl sm:text-3xl font-black font-mono text-slate-900">
-                {approachingSlaReports.length}
-              </div>
-              <p className="text-xs text-slate-600 font-bold mt-1 leading-snug">
-                {approachingSlaReports.length > 0
-                  ? `${approachingSlaReports.length} tickets with < 2 hours remaining. Risk of breach.`
-                  : 'Zero open tickets in danger zone (<2h SLA remaining).'}
-              </p>
-            </div>
-            <div className="mt-3 text-[10px] font-black text-[#256BF5] flex items-center gap-1">
-              <span>{kpiFilter === 'APPROACHING_SLA' ? 'Filtering active' : 'Click to inspect urgent SLA'}</span>
-              <ArrowRight className="w-3 h-3" />
-            </div>
-          </div>
-
-          {/* Question 4: Which problems require escalation? */}
-          <div
-            onClick={() => setKpiFilter(kpiFilter === 'BREACHED' ? 'ALL' : 'BREACHED')}
-            className={`p-5 rounded-3xl border-2 transition-all cursor-pointer relative ${
-              kpiFilter === 'BREACHED'
-                ? 'bg-red-50/80 border-[#EF4444] ring-4 ring-red-300/40 shadow-md'
-                : 'bg-white border-slate-200 hover:border-red-400 hover:shadow-sm'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-wider text-red-800 bg-red-100 px-2.5 py-0.5 rounded-full">
-                4. Require Escalation
-              </span>
-              <AlertOctagon className="w-4 h-4 text-[#EF4444]" />
-            </div>
-            <div className="mt-3">
-              <div className="text-2xl sm:text-3xl font-black font-mono text-[#EF4444]">
-                {breachedReports.length}
-              </div>
-              <p className="text-xs text-slate-600 font-bold mt-1 leading-snug">
-                {breachedReports.length > 0
-                  ? `${slaBreachesCount} SLA breaches + ${reports.filter(r => r.status === 'ESCALATED').length} formally escalated to AEE.`
-                  : 'No breached or escalated tickets pending review.'}
-              </p>
-            </div>
-            <div className="mt-3 text-[10px] font-black text-[#EF4444] flex items-center gap-1">
-              <span>{kpiFilter === 'BREACHED' ? 'Filtering active' : 'Click to inspect breaches'}</span>
-              <ArrowRight className="w-3 h-3" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* 3. SIX CORE MUNICIPAL KPI CARDS                                          */}
-      {/* ========================================================================= */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-xs font-black uppercase tracking-wider text-slate-600">
-            Municipal Operational KPIs (Click any card to filter queue)
-          </h3>
-          {kpiFilter !== 'ALL' && (
-            <button
-              type="button"
-              onClick={() => setKpiFilter('ALL')}
-              className="text-xs font-black text-[#256BF5] hover:underline flex items-center gap-1"
-            >
-              <span>Reset filter ({kpiFilter})</span>
-              <X className="w-3 h-3" />
-            </button>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {/* KPI 1: Total Reports */}
+      {/* 3. VIEW TOGGLE BAR: INCIDENTS QUEUE vs HOTSPOT ZONES */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+        {/* Tab Buttons */}
+        <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-2xl border border-slate-200">
           <button
             type="button"
-            onClick={() => setKpiFilter(kpiFilter === 'ALL' ? 'ALL' : 'ALL')}
-            className={`p-4 rounded-2xl text-left border-2 transition-all ${
-              kpiFilter === 'ALL'
-                ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
-                : 'bg-white text-slate-900 border-slate-200 hover:border-slate-300'
+            onClick={() => setActiveTab('queue')}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+              activeTab === 'queue'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <span className={`text-[10px] font-black uppercase tracking-wider block ${kpiFilter === 'ALL' ? 'text-slate-400' : 'text-slate-500'}`}>
-              Total Reports
-            </span>
-            <span className="text-2xl sm:text-3xl font-black font-mono mt-1 block">
-              {totalReportsCount}
-            </span>
-            <span className={`text-[10px] font-bold block mt-1 ${kpiFilter === 'ALL' ? 'text-slate-300' : 'text-slate-500'}`}>
-              All logged incidents
+            <Filter className="w-3.5 h-3.5 text-[#256BF5]" />
+            <span>Incidents Queue</span>
+            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-mono font-bold">
+              {filteredReports.length}
             </span>
           </button>
 
-          {/* KPI 2: Open Reports */}
           <button
             type="button"
-            onClick={() => setKpiFilter(kpiFilter === 'OPEN' ? 'ALL' : 'OPEN')}
-            className={`p-4 rounded-2xl text-left border-2 transition-all ${
-              kpiFilter === 'OPEN'
-                ? 'bg-[#FFC800] text-slate-950 border-amber-500 shadow-sm ring-2 ring-amber-300'
-                : 'bg-white text-slate-900 border-slate-200 hover:border-amber-300'
+            onClick={() => setActiveTab('hotspots')}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+              activeTab === 'hotspots'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 block">
-              Open Reports
-            </span>
-            <span className="text-2xl sm:text-3xl font-black font-mono mt-1 block text-slate-950">
-              {openReportsCount}
-            </span>
-            <span className="text-[10px] font-bold text-amber-900/80 block mt-1">
-              Awaiting squad dispatch
-            </span>
-          </button>
-
-          {/* KPI 3: High/Critical Priority */}
-          <button
-            type="button"
-            onClick={() => setKpiFilter(kpiFilter === 'HIGH_CRITICAL' ? 'ALL' : 'HIGH_CRITICAL')}
-            className={`p-4 rounded-2xl text-left border-2 transition-all ${
-              kpiFilter === 'HIGH_CRITICAL'
-                ? 'bg-[#256BF5] text-white border-blue-700 shadow-sm ring-2 ring-blue-300'
-                : 'bg-white text-slate-900 border-slate-200 hover:border-blue-300'
-            }`}
-          >
-            <span className={`text-[10px] font-black uppercase tracking-wider block ${kpiFilter === 'HIGH_CRITICAL' ? 'text-blue-100' : 'text-blue-600'}`}>
-              High / Critical
-            </span>
-            <span className="text-2xl sm:text-3xl font-black font-mono mt-1 block">
-              {highCriticalCount}
-            </span>
-            <span className={`text-[10px] font-bold block mt-1 ${kpiFilter === 'HIGH_CRITICAL' ? 'text-blue-200' : 'text-slate-500'}`}>
-              Score ≥ 70 or Critical
-            </span>
-          </button>
-
-          {/* KPI 4: In Progress */}
-          <button
-            type="button"
-            onClick={() => setKpiFilter(kpiFilter === 'IN_PROGRESS' ? 'ALL' : 'IN_PROGRESS')}
-            className={`p-4 rounded-2xl text-left border-2 transition-all ${
-              kpiFilter === 'IN_PROGRESS'
-                ? 'bg-blue-600 text-white border-blue-800 shadow-sm ring-2 ring-blue-300'
-                : 'bg-white text-slate-900 border-slate-200 hover:border-blue-300'
-            }`}
-          >
-            <span className={`text-[10px] font-black uppercase tracking-wider block ${kpiFilter === 'IN_PROGRESS' ? 'text-blue-100' : 'text-blue-700'}`}>
-              In Progress
-            </span>
-            <span className="text-2xl sm:text-3xl font-black font-mono mt-1 block">
-              {inProgressCount}
-            </span>
-            <span className={`text-[10px] font-bold block mt-1 ${kpiFilter === 'IN_PROGRESS' ? 'text-blue-200' : 'text-slate-500'}`}>
-              Crews on-site working
-            </span>
-          </button>
-
-          {/* KPI 5: Resolved */}
-          <button
-            type="button"
-            onClick={() => setKpiFilter(kpiFilter === 'RESOLVED' ? 'ALL' : 'RESOLVED')}
-            className={`p-4 rounded-2xl text-left border-2 transition-all ${
-              kpiFilter === 'RESOLVED'
-                ? 'bg-[#10B981] text-white border-emerald-700 shadow-sm ring-2 ring-emerald-300'
-                : 'bg-white text-slate-900 border-slate-200 hover:border-emerald-300'
-            }`}
-          >
-            <span className={`text-[10px] font-black uppercase tracking-wider block ${kpiFilter === 'RESOLVED' ? 'text-emerald-100' : 'text-emerald-600'}`}>
-              Resolved
-            </span>
-            <span className="text-2xl sm:text-3xl font-black font-mono mt-1 block">
-              {resolvedCount}
-            </span>
-            <span className={`text-[10px] font-bold block mt-1 ${kpiFilter === 'RESOLVED' ? 'text-emerald-200' : 'text-slate-500'}`}>
-              Evidence verified
-            </span>
-          </button>
-
-          {/* KPI 6: SLA Breaches */}
-          <button
-            type="button"
-            onClick={() => setKpiFilter(kpiFilter === 'BREACHED' ? 'ALL' : 'BREACHED')}
-            className={`p-4 rounded-2xl text-left border-2 transition-all ${
-              kpiFilter === 'BREACHED'
-                ? 'bg-[#EF4444] text-white border-red-700 shadow-sm ring-2 ring-red-300'
-                : 'bg-white text-slate-900 border-slate-200 hover:border-red-300'
-            }`}
-          >
-            <span className={`text-[10px] font-black uppercase tracking-wider block ${kpiFilter === 'BREACHED' ? 'text-red-100' : 'text-red-600'}`}>
-              SLA Breaches
-            </span>
-            <span className="text-2xl sm:text-3xl font-black font-mono mt-1 block">
-              {slaBreachesCount}
-            </span>
-            <span className={`text-[10px] font-bold block mt-1 ${kpiFilter === 'BREACHED' ? 'text-red-200' : 'text-slate-500'}`}>
-              Time limit exceeded
+            <Flame className="w-3.5 h-3.5 text-red-500" />
+            <span>Hotspot Areas</span>
+            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-mono font-bold">
+              {hotspots.length}
             </span>
           </button>
         </div>
-      </div>
 
-      {/* ========================================================================= */}
-      {/* 4. DRAINAGE HOTSPOT CLUSTERS (OPERATIONAL SIGNALS)                        */}
-      {/* ========================================================================= */}
-      <div className="bg-[#EDF4FF] rounded-3xl p-6 border-2 border-blue-200 space-y-4 shadow-xs">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-2">
-              <Flame className="w-5 h-5 text-[#EF4444] animate-pulse" />
-              <h3 className="text-base sm:text-lg font-black text-slate-900">
-                Drainage Hotspots (Operational Triage Signals)
-              </h3>
-            </div>
-            <p className="text-xs text-slate-600 font-medium">
-              Repeated reports in a concentrated area may indicate a persistent drainage issue. Prototype rule: ≥3 reports within 200m.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-black text-blue-800 bg-white border border-blue-200 px-3 py-1 rounded-full shadow-xs">
-              {hotspots.length} Monitored Hotspots
-            </span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {hotspots.map(hs => (
-            <div
-              key={hs.id}
-              onClick={() => setSelectedWard(hs.ward.split('-')[1]?.trim() || hs.ward)}
-              className="p-4 rounded-2xl bg-white border-2 border-blue-100 hover:border-[#256BF5] space-y-3 text-xs shadow-xs cursor-pointer transition-all hover:shadow-md"
-            >
-              <div className="flex justify-between items-start gap-2">
-                <div>
-                  <span className="font-mono text-[9px] font-black text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded block mb-1">
-                    {hs.id}
-                  </span>
-                  <h4 className="font-black text-slate-900 text-sm leading-tight">{hs.location_name}</h4>
-                </div>
-                <span
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase flex-shrink-0 ${
-                    hs.operational_status === 'RESOLVED_MONITORED'
-                      ? 'bg-emerald-100 text-emerald-800'
-                      : hs.operational_status === 'UNDER_INTERVENTION'
-                      ? 'bg-blue-100 text-[#256BF5]'
-                      : 'bg-red-100 text-[#EF4444]'
-                  }`}
-                >
-                  {hs.operational_status ? hs.operational_status.replace(/_/g, ' ') : hs.risk_level}
-                </span>
-              </div>
-
-              {/* Cluster Density Metrics */}
-              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1 text-[11px] font-bold">
-                <div className="flex justify-between text-red-700 font-black">
-                  <span>Density:</span>
-                  <span>{hs.report_count} reports within 200m</span>
-                </div>
-                <div className="flex justify-between text-amber-800">
-                  <span>Unresolved:</span>
-                  <span>{hs.unresolved_count ?? hs.report_count} active tickets</span>
-                </div>
-                {hs.high_priority_count !== undefined && (
-                  <div className="flex justify-between text-slate-700 font-medium">
-                    <span>High Priority:</span>
-                    <span>{hs.high_priority_count} tickets</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Severity Distribution Pills */}
-              {hs.severity_distribution && (
-                <div className="flex items-center gap-1 text-[9px] font-black font-mono">
-                  <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-800">
-                    Crit: {hs.severity_distribution.critical}
-                  </span>
-                  <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
-                    High: {hs.severity_distribution.high}
-                  </span>
-                  <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">
-                    Med: {hs.severity_distribution.medium}
-                  </span>
-                  <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                    Low: {hs.severity_distribution.low}
-                  </span>
-                </div>
-              )}
-
-              {/* Operational Action */}
-              <div className="pt-2 border-t border-slate-100 text-[11px]">
-                <span className="text-[10px] font-bold text-slate-400 block uppercase">
-                  Suggested Action:
-                </span>
-                <p className="font-black text-[#256BF5] mt-0.5">
-                  {hs.suggested_action || 'Inspect drainage segment / dispatch response crew'}
-                </p>
-              </div>
-
-              <div className="text-[10px] text-slate-400 flex justify-between pt-1 border-t border-slate-100">
-                <span className="font-bold text-slate-600">Ward: {hs.ward}</span>
-                <span>{hs.latest_report || hs.last_reported}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* 5. MUNICIPAL INCIDENT TABLE WITH VISUAL STATUS BADGES                     */}
-      {/* ========================================================================= */}
-      <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
-        {/* Table Header & Controls */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-100">
-          <div>
-            <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-              <Filter className="w-5 h-5 text-[#256BF5]" /> Municipal Incident Operations Queue
-            </h3>
-            <p className="text-xs text-slate-500 font-medium">
-              Click any row to inspect full ticket diagnostic side panel, review AI confidence, and dispatch crews.
-            </p>
-          </div>
-
+        {/* Search & Ward Filter Controls (Visible in Queue view) */}
+        {activeTab === 'queue' && (
           <div className="flex flex-wrap items-center gap-2">
-            {/* Search Box */}
             <div className="relative">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search ticket, ward, landmark..."
-                className="pl-8 pr-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 font-bold focus:outline-hidden focus:border-[#256BF5]"
+                placeholder="Search ticket, ward, issue..."
+                className="pl-8 pr-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-[#256BF5] w-40 sm:w-56 shadow-2xs"
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
             </div>
 
-            {/* Ward Filter */}
             <select
               value={selectedWard}
               onChange={e => setSelectedWard(e.target.value)}
-              className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-black text-slate-900 focus:outline-hidden focus:border-[#256BF5]"
+              className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-800 focus:outline-hidden focus:border-[#256BF5] shadow-2xs cursor-pointer"
             >
-              <option value="ALL">All Keralam Wards</option>
-              <option value="Vyttila">Ward 24 (Vyttila)</option>
-              <option value="Kadavanthra">Ward 35 (Kadavanthra)</option>
-              <option value="Fort Kochi">Ward 12 (Fort Kochi)</option>
-              <option value="Edappally">Ward 40 (Edappally)</option>
-              <option value="Kaloor">Ward 28 (Kaloor)</option>
+              <option value="ALL">All Wards</option>
+              <option value="Vyttila">Vyttila (Ward 24)</option>
+              <option value="Kadavanthra">Kadavanthra (Ward 35)</option>
+              <option value="Fort Kochi">Fort Kochi (Ward 12)</option>
+              <option value="Edappally">Edappally (Ward 40)</option>
+              <option value="Kaloor">Kaloor (Ward 28)</option>
             </select>
 
-            {/* Sort Selector */}
             <select
               value={sortBy}
               onChange={e => setSortBy(e.target.value as any)}
-              className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-black text-slate-900 focus:outline-hidden focus:border-[#256BF5]"
+              className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-800 focus:outline-hidden focus:border-[#256BF5] shadow-2xs cursor-pointer"
             >
-              <option value="priority">Sort: NIRA Priority</option>
+              <option value="priority">Sort: Priority Score</option>
               <option value="sla">Sort: SLA Urgency</option>
               <option value="newest">Sort: Newest First</option>
             </select>
           </div>
-        </div>
+        )}
+      </div>
 
-        {/* The Incident Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-700">
-            <thead className="bg-slate-50 text-slate-600 uppercase font-black text-[10px] border-b border-slate-200">
-              <tr>
-                <th className="px-3 py-3">Ticket ID</th>
-                <th className="px-3 py-3">Issue</th>
-                <th className="px-3 py-3">Ward</th>
-                <th className="px-3 py-3">Severity</th>
-                <th className="px-3 py-3">Priority Score</th>
-                <th className="px-3 py-3">Status</th>
-                <th className="px-3 py-3">Age</th>
-                <th className="px-3 py-3">SLA</th>
-                <th className="px-3 py-3">Assigned Crew / Officer</th>
-                <th className="px-3 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 font-medium">
-              {filteredReports.length === 0 ? (
-                <tr>
-                  <td colSpan={10} className="px-4 py-8 text-center text-slate-500 font-medium">
-                    No tickets found matching the selected filters.
-                  </td>
-                </tr>
-              ) : (
-                filteredReports.map(rep => {
-                  const sla = getSlaInfo(rep);
-                  const isSelected = selectedTicket?.id === rep.id;
+      {/* 4A. TAB 1: INCIDENTS QUEUE (SIMPLIFIED & SCANNABLE) */}
+      {activeTab === 'queue' && (
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
+          {/* Active filter badge if filtering */}
+          {kpiFilter !== 'ALL' && (
+            <div className="px-5 py-2.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-slate-500 font-bold">Filtered by:</span>
+                <span className="px-2.5 py-0.5 rounded-full bg-[#256BF5] text-white font-black text-[10px] uppercase">
+                  {kpiFilter.replace('_', ' ')}
+                </span>
+                <span className="text-slate-400 font-medium">({filteredReports.length} results)</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setKpiFilter('ALL')}
+                className="text-[#256BF5] hover:underline font-bold text-xs flex items-center gap-1 cursor-pointer"
+              >
+                <span>Clear filter</span>
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          )}
 
-                  return (
-                    <tr
-                      key={rep.id}
-                      onClick={() => setSelectedTicket(rep)}
-                      className={`hover:bg-blue-50/60 cursor-pointer transition-colors ${
-                        isSelected ? 'bg-blue-50/80 ring-1 ring-[#256BF5]' : ''
-                      }`}
-                    >
-                      {/* Ticket ID */}
-                      <td className="px-3 py-3 font-mono font-black text-[#256BF5]">
-                        <span className="bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100">
+          {filteredReports.length === 0 ? (
+            <div className="py-16 px-4 text-center space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
+                <Filter className="w-6 h-6" />
+              </div>
+              <h4 className="text-base font-black text-slate-800">No Incidents Found</h4>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto font-medium">
+                No reports match the selected filters. Try changing your search query or reset your filters.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setKpiFilter('ALL');
+                  setSelectedWard('ALL');
+                  setSearchQuery('');
+                }}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black transition-all cursor-pointer"
+              >
+                Reset All Filters
+              </button>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {filteredReports.map(rep => {
+                const sla = getSlaInfo(rep);
+                const isSelected = selectedTicket?.id === rep.id;
+
+                return (
+                  <div
+                    key={rep.id}
+                    onClick={() => setSelectedTicket(rep)}
+                    className={`p-4 sm:px-6 sm:py-4.5 hover:bg-blue-50/40 transition-colors cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                      isSelected ? 'bg-blue-50/70' : ''
+                    }`}
+                  >
+                    {/* Left: Ticket ID, Issue & Ward */}
+                    <div className="space-y-1 sm:max-w-md">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-mono font-black text-[#256BF5] text-xs bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-lg">
                           {rep.ticket_code}
                         </span>
-                      </td>
-
-                      {/* Issue */}
-                      <td className="px-3 py-3 font-bold text-slate-900">
-                        <div className="max-w-[160px] truncate">
-                          {rep.issue_type.replace(/_/g, ' ')}
-                        </div>
-                      </td>
-
-                      {/* Ward */}
-                      <td className="px-3 py-3">
-                        <div className="font-black text-slate-900">{rep.ward}</div>
-                        <div className="text-[10px] text-slate-500 truncate max-w-[140px]">
-                          {rep.landmark}
-                        </div>
-                      </td>
-
-                      {/* Severity */}
-                      <td className="px-3 py-3">
-                        <span
-                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                            rep.severity === 'CRITICAL'
-                              ? 'bg-red-100 text-[#EF4444]'
-                              : rep.severity === 'HIGH'
-                              ? 'bg-amber-100 text-amber-800'
-                              : rep.severity === 'MEDIUM'
-                              ? 'bg-blue-100 text-[#256BF5]'
-                              : 'bg-slate-100 text-slate-700'
-                          }`}
-                        >
-                          {rep.severity}
+                        <span className="text-xs font-bold text-slate-500">
+                          {formatAge(rep.created_at)}
                         </span>
-                      </td>
-
-                      {/* Priority Score */}
-                      <td className="px-3 py-3">
-                        <NIRAPriorityBadge score={rep.priority_score} size="sm" />
-                      </td>
-
-                      {/* Visual Status Badges */}
-                      <td className="px-3 py-3">
                         <span
-                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase inline-flex items-center gap-1 ${
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase inline-flex items-center gap-1 ${
                             rep.status === 'RESOLVED'
                               ? 'bg-emerald-100 text-[#10B981]'
                               : rep.status === 'ESCALATED'
@@ -1161,85 +831,190 @@ export const AuthorityCommandCenter: React.FC<AuthorityCommandCenterProps> = ({
                           )}
                           <span>{rep.status === 'OPEN' ? 'REPORTED' : rep.status.replace('_', ' ')}</span>
                         </span>
-                      </td>
+                      </div>
 
-                      {/* Age */}
-                      <td className="px-3 py-3 font-mono text-slate-500 text-[11px] whitespace-nowrap">
-                        {formatAge(rep.created_at)}
-                      </td>
+                      <h4 className="text-sm font-black text-slate-900 leading-snug">
+                        {rep.issue_type.replace(/_/g, ' ')}
+                      </h4>
 
-                      {/* SLA */}
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black ${
-                            rep.status === 'RESOLVED'
-                              ? 'bg-slate-100 text-slate-600'
-                              : sla.isBreached
-                              ? 'bg-red-100 text-[#EF4444]'
-                              : sla.isApproaching
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-blue-50 text-[#256BF5]'
-                          }`}
-                        >
-                          <Clock className="w-3 h-3" />
-                          <span>
-                            {rep.status === 'RESOLVED'
-                              ? `Met (${sla.elapsedHours}h)`
-                              : sla.remainingDisplay}
-                          </span>
+                      <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                        <span className="text-slate-800 font-bold">{rep.ward}</span>
+                        {rep.landmark && (
+                          <>
+                            <span>•</span>
+                            <span className="truncate max-w-[200px]">{rep.landmark}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Middle: Priority Score & SLA Window */}
+                    <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+                      <NIRAPriorityBadge score={rep.priority_score} size="sm" />
+
+                      <span
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black ${
+                          rep.status === 'RESOLVED'
+                            ? 'bg-slate-100 text-slate-600'
+                            : sla.isBreached
+                            ? 'bg-red-100 text-[#EF4444]'
+                            : sla.isApproaching
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-blue-50 text-[#256BF5]'
+                        }`}
+                      >
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>
+                          {rep.status === 'RESOLVED' ? `Resolved in ${sla.elapsedHours}h` : sla.remainingDisplay}
                         </span>
-                      </td>
+                      </span>
+                    </div>
 
-                      {/* Assigned Crew/Officer */}
-                      <td className="px-3 py-3 text-slate-700 font-bold">
-                        <div className="truncate max-w-[150px]">
-                          {rep.assigned_crew || rep.assigned_officer ? (
-                            <span className="text-slate-800">
-                              {rep.assigned_crew || rep.assigned_officer}
-                            </span>
-                          ) : (
-                            <span className="text-slate-400 font-normal italic">Unassigned</span>
-                          )}
-                        </div>
-                      </td>
+                    {/* Right: Crew Assigned & Action Buttons */}
+                    <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                      {/* Crew Info */}
+                      <div className="text-left sm:text-right text-xs pr-2 hidden md:block">
+                        <span className="text-slate-400 text-[10px] uppercase font-bold block">Assigned Squad</span>
+                        <span className="font-bold text-slate-800 truncate max-w-[150px] block">
+                          {rep.assigned_crew ? rep.assigned_crew.split('(')[0] : 'Unassigned'}
+                        </span>
+                      </div>
 
-                      {/* Inspect / Quick Action */}
-                      <td className="px-3 py-3 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {rep.status !== 'RESOLVED' && (
+                      {/* Quick Action Buttons */}
+                      <div className="flex items-center gap-1.5 ml-auto sm:ml-0">
+                        {rep.status !== 'RESOLVED' ? (
+                          <>
+                            {!rep.assigned_crew && (
+                              <button
+                                type="button"
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  setCrewModalReport(rep);
+                                }}
+                                className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-[#256BF5] hover:text-white text-[#256BF5] font-black text-xs transition-all flex items-center gap-1 border border-blue-200 cursor-pointer"
+                              >
+                                <Users className="w-3.5 h-3.5" />
+                                <span>Assign</span>
+                              </button>
+                            )}
+
                             <button
                               type="button"
                               onClick={e => {
                                 e.stopPropagation();
                                 setResolutionModalReport(rep);
                               }}
-                              className="px-2.5 py-1 rounded-xl bg-emerald-50 hover:bg-[#10B981] hover:text-white text-emerald-700 font-black text-[10px] transition-all flex items-center gap-1 border border-emerald-200"
+                              className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-[#10B981] hover:text-white text-emerald-700 font-black text-xs transition-all flex items-center gap-1 border border-emerald-200 cursor-pointer"
                             >
-                              <FileCheck className="w-3 h-3" />
+                              <FileCheck className="w-3.5 h-3.5" />
                               <span>Resolve</span>
                             </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={e => {
-                              e.stopPropagation();
-                              setSelectedTicket(rep);
-                            }}
-                            className="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-[#256BF5] hover:text-white text-slate-700 font-black text-[10px] transition-all flex items-center gap-1"
-                          >
-                            <Eye className="w-3 h-3" />
-                            <span>Inspect</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                          </>
+                        ) : (
+                          <span className="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 font-bold text-xs flex items-center gap-1 border border-emerald-200">
+                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Verified</span>
+                          </span>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={e => {
+                            e.stopPropagation();
+                            setSelectedTicket(rep);
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs transition-all flex items-center gap-1 cursor-pointer"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Details</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
-      </div>
+      )}
+
+      {/* 4B. TAB 2: HOTSPOT CLUSTER ANALYSIS (CLEAN & ACCESSIBLE) */}
+      {activeTab === 'hotspots' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-slate-500 font-medium">
+              Geographic clusters where multiple drainage reports were received within 200 meters.
+            </p>
+            <span className="text-xs font-black text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1 rounded-full">
+              {hotspots.length} Active Hotspots
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {hotspots.map(hs => (
+              <div
+                key={hs.id}
+                className="p-5 rounded-3xl bg-white border border-slate-200 shadow-xs space-y-3 hover:border-[#256BF5] transition-all"
+              >
+                <div className="flex justify-between items-start gap-2">
+                  <div>
+                    <span className="text-[10px] font-mono font-bold text-slate-400 block mb-1">
+                      {hs.id} • {hs.ward}
+                    </span>
+                    <h4 className="font-black text-slate-900 text-base leading-tight">
+                      {hs.location_name}
+                    </h4>
+                  </div>
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                      hs.risk_level === 'CRITICAL'
+                        ? 'bg-red-100 text-[#EF4444]'
+                        : hs.risk_level === 'HIGH'
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'bg-blue-100 text-[#256BF5]'
+                    }`}
+                  >
+                    {hs.risk_level} Risk
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-1 text-xs">
+                  <div className="flex justify-between font-bold text-slate-800">
+                    <span>Concentration:</span>
+                    <span className="text-red-600 font-black">{hs.report_count} reports in 200m</span>
+                  </div>
+                  <div className="flex justify-between font-bold text-slate-600">
+                    <span>Unresolved:</span>
+                    <span>{hs.unresolved_count ?? hs.report_count} tickets</span>
+                  </div>
+                </div>
+
+                <div className="text-xs text-slate-600 font-medium">
+                  <span className="text-[10px] font-black text-slate-400 uppercase block mb-0.5">
+                    Recommended Action
+                  </span>
+                  <p className="font-bold text-[#256BF5]">
+                    {hs.suggested_action || 'Dispatch vacuum desilting squad'}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const wardName = hs.ward.includes('-') ? hs.ward.split('-')[1]?.trim() : hs.ward;
+                    setSelectedWard(wardName || 'ALL');
+                    setActiveTab('queue');
+                  }}
+                  className="w-full py-2 rounded-xl bg-slate-100 hover:bg-[#256BF5] hover:text-white text-slate-800 font-black text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <span>Filter Incidents in this Ward</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* 6. SLIDE-OVER DETAILED SIDE PANEL                                        */}
