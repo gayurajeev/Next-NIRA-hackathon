@@ -49,6 +49,22 @@ export default function PublicLandingPage() {
       }
     }
     loadPublicData();
+
+    const handleExternalUpdate = () => {
+      loadPublicData();
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('nira_reports_updated', handleExternalUpdate);
+      window.addEventListener('storage', handleExternalUpdate);
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('nira_reports_updated', handleExternalUpdate);
+        window.removeEventListener('storage', handleExternalUpdate);
+      }
+    };
   }, []);
 
   const scrollToMap = () => {

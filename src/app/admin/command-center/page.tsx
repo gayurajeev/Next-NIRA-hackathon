@@ -58,6 +58,22 @@ export default function AdminCommandCenterPage() {
     if (user && user.role === 'GOVERNMENT') {
       loadData();
     }
+
+    const handleExternalUpdate = () => {
+      loadData();
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('nira_reports_updated', handleExternalUpdate);
+      window.addEventListener('storage', handleExternalUpdate);
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('nira_reports_updated', handleExternalUpdate);
+        window.removeEventListener('storage', handleExternalUpdate);
+      }
+    };
   }, [user]);
 
   const handleReportUpdated = (updatedReport: DrainageReport) => {

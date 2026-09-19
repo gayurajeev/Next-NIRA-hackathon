@@ -37,39 +37,6 @@ interface CitizenReportProps {
   onNavigateToMyReports: () => void;
 }
 
-const SAMPLE_PHOTOS = [
-  {
-    url: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?auto=format&fit=crop&w=800&q=80',
-    label: 'Blocked Storm Drain',
-    type: 'BLOCKED_STORM_DRAIN' as DrainageIssueType,
-    severity: 'HIGH' as SeverityLevel,
-  },
-  {
-    url: 'https://images.unsplash.com/photo-1584467735871-8e85353a8413?auto=format&fit=crop&w=800&q=80',
-    label: 'Silt & Mud Accumulation',
-    type: 'SILT_ACCUMULATION' as DrainageIssueType,
-    severity: 'HIGH' as SeverityLevel,
-  },
-  {
-    url: 'https://images.unsplash.com/photo-1590059301072-a162235c5c0d?auto=format&fit=crop&w=800&q=80',
-    label: 'Broken Culvert',
-    type: 'BROKEN_CULVERT' as DrainageIssueType,
-    severity: 'CRITICAL' as SeverityLevel,
-  },
-  {
-    url: 'https://images.unsplash.com/photo-1605600659908-0ef719419d41?auto=format&fit=crop&w=800&q=80',
-    label: 'Illegal Garbage Dumping',
-    type: 'GARBAGE_DUMPING' as DrainageIssueType,
-    severity: 'MEDIUM' as SeverityLevel,
-  },
-  {
-    url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
-    label: 'Sewage Overflow',
-    type: 'SEWAGE_OVERFLOW' as DrainageIssueType,
-    severity: 'CRITICAL' as SeverityLevel,
-  },
-];
-
 export const CitizenReport: React.FC<CitizenReportProps> = ({
   onReportCreated,
   onNavigateToMyReports,
@@ -93,7 +60,7 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isStartingCamera, setIsStartingCamera] = useState<boolean>(false);
 
-  const [photoUrl, setPhotoUrl] = useState<string>(SAMPLE_PHOTOS[0].url);
+  const [photoUrl, setPhotoUrl] = useState<string>('');
   const [issueType, setIssueType] = useState<DrainageIssueType>('BLOCKED_STORM_DRAIN');
   const [severity, setSeverity] = useState<SeverityLevel>('HIGH');
   const [ward, setWard] = useState<string>('Vyttila');
@@ -134,10 +101,9 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
     };
   }, [cameraStream]);
 
-  // Automatic initial ward determination and photo classification on mount
+  // Automatic initial ward determination on mount
   useEffect(() => {
     handleLocationUpdate(9.9674, 76.3160, undefined, false);
-    analyzePhoto(SAMPLE_PHOTOS[0].url, SAMPLE_PHOTOS[0].type);
   }, []);
 
   // Live in-browser Camera functions
@@ -205,45 +171,37 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
 
     const video = videoRef.current;
     const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth || 1280;
-    canvas.height = video.videoHeight || 720;
+    const maxDim = 1200;
+    let width = video.videoWidth || 1280;
+    let height = video.videoHeight || 720;
+    if (width > maxDim || height > maxDim) {
+      if (width > height) {
+        height = Math.round((height * maxDim) / width);
+        width = maxDim;
+      } else {
+        width = Math.round((width * maxDim) / height);
+        height = maxDim;
+      }
+    }
+    canvas.width = width;
+    canvas.height = height;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+    ctx.drawImage(video, 0, 0, width, height);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
 
     // Stop camera and close viewfinder
     stopCamera();
 
-    // Show snapped photo instantly
+    // Show snapped photo instantly and run AI classification
     setPhotoUrl(dataUrl);
-
-    // Upload to Supabase bucket 'storage'
-    setIsUploading(true);
-    try {
-      canvas.toBlob(async (blob) => {
-        if (blob) {
-          const file = new File([blob], `drain_camera_${Date.now()}.jpg`, { type: 'image/jpeg' });
-          try {
-            const uploadedUrl = await niraService.uploadDrainagePhoto(file);
-            setPhotoUrl(uploadedUrl);
-            await analyzePhoto(uploadedUrl);
-          } catch {
-            await analyzePhoto(dataUrl);
-          } finally {
-            setIsUploading(false);
-          }
-        }
-      }, 'image/jpeg', 0.88);
-    } catch {
-      setIsUploading(false);
-      await analyzePhoto(dataUrl);
-    }
+    await analyzePhoto(dataUrl);
   };
 
   // AI photo analysis handler using pluggable drainageClassifierService
   const analyzePhoto = async (url: string, forcedType?: DrainageIssueType) => {
+    if (!url) return;
     setIsAnalyzing(true);
     setAiAnalysisError(null);
 
@@ -298,25 +256,20 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
     }
   };
 
-  const handlePhotoSelect = (sample: typeof SAMPLE_PHOTOS[0]) => {
-    setPhotoUrl(sample.url);
-    analyzePhoto(sample.url, sample.type);
-  };
-
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setIsUploading(true);
     try {
-      // Upload to Supabase bucket 'storage'
       const uploadedUrl = await niraService.uploadDrainagePhoto(file);
-      setPhotoUrl(uploadedUrl);
-      await analyzePhoto(uploadedUrl);
+      if (uploadedUrl) {
+        setPhotoUrl(uploadedUrl);
+        await analyzePhoto(uploadedUrl);
+      }
     } catch (err) {
       console.error('File upload failed:', err);
-      setAiAnalysisError('Failed to upload image to storage. Running local heuristic analysis.');
-      await analyzePhoto(photoUrl);
+      setAiAnalysisError('Unable to process selected image. Please try again.');
     } finally {
       setIsUploading(false);
     }
@@ -540,36 +493,55 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                       Capture directly using your device camera or upload from files.
                     </p>
                   </div>
-                  <span className="text-emerald-700 font-bold text-[11px] bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-xl flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Photo Attached
-                  </span>
+                  {photoUrl ? (
+                    <span className="text-emerald-700 font-bold text-[11px] bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-xl flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Photo Attached
+                    </span>
+                  ) : (
+                    <span className="text-amber-700 font-bold text-[11px] bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-xl flex items-center gap-1">
+                      <Camera className="w-3.5 h-3.5 text-amber-600" /> Photo Required
+                    </span>
+                  )}
                 </div>
 
                 {/* Image Preview Box */}
                 <div className="relative w-full h-72 sm:h-80 rounded-2xl bg-slate-50 border-2 border-dashed border-blue-200 overflow-hidden flex flex-col items-center justify-center text-center shadow-inner">
-                  <img
-                    src={photoUrl}
-                    alt="Drainage Blockage Preview"
-                    className={`w-full h-full object-cover transition-opacity duration-300 ${isUploading ? 'opacity-30' : 'opacity-100'}`}
-                  />
+                  {photoUrl ? (
+                    <>
+                      <img
+                        src={photoUrl}
+                        alt="Drainage Blockage Evidence"
+                        className={`w-full h-full object-cover transition-opacity duration-300 ${isUploading ? 'opacity-30' : 'opacity-100'}`}
+                      />
+                      <div className="absolute bottom-3 left-3 right-3 bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between text-xs z-10">
+                        <span className="flex items-center gap-1.5 text-slate-800 font-bold">
+                          <Camera className="w-4 h-4 text-[#256BF5]" /> Photo Loaded
+                        </span>
+                        <span className="text-emerald-700 font-bold text-[11px]">
+                          Ready for location pinning
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center p-6 text-center space-y-2.5">
+                      <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#256BF5] flex items-center justify-center">
+                        <Camera className="w-7 h-7" />
+                      </div>
+                      <h4 className="text-base font-black text-slate-900">No Photo Taken Yet</h4>
+                      <p className="text-xs text-slate-500 max-w-xs font-medium">
+                        Take a photo using your phone camera or select an image file to report the drain issue.
+                      </p>
+                    </div>
+                  )}
 
                   {isUploading && (
                     <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center space-y-2 z-10">
                       <Cpu className="w-8 h-8 text-[#256BF5] animate-spin" />
                       <p className="text-xs font-black text-[#256BF5]">
-                        Uploading your photo...
+                        Processing your photo...
                       </p>
                     </div>
                   )}
-
-                  <div className="absolute bottom-3 left-3 right-3 bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between text-xs z-10">
-                    <span className="flex items-center gap-1.5 text-slate-800 font-bold">
-                      <Camera className="w-4 h-4 text-[#256BF5]" /> Photo Loaded
-                    </span>
-                    <span className="text-slate-500 font-bold text-[11px]">
-                      Ready for location pinning
-                    </span>
-                  </div>
                 </div>
 
                 {/* Camera & File Upload Inputs (hidden triggers) */}
@@ -594,7 +566,6 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                 {/* TWO PROMINENT ACTION BUTTONS: Live Camera vs Gallery Upload */}
                 <div className="space-y-3 pt-1">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    
                     {/* Primary: Live Camera Viewfinder */}
                     <button
                       type="button"
@@ -602,7 +573,7 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                       className="py-4 px-4 rounded-2xl bg-[#256BF5] hover:bg-blue-700 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2.5 shadow-md shadow-blue-500/25 transition-all hover:scale-[1.01] active:scale-95 cursor-pointer"
                     >
                       <Camera className="w-5 h-5" />
-                      <span>Capture with Live Camera</span>
+                      <span>{photoUrl ? 'Retake with Camera' : 'Capture with Live Camera'}</span>
                     </button>
 
                     {/* Secondary: Upload from Device */}
@@ -612,30 +583,8 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
                       className="py-4 px-4 rounded-2xl bg-blue-50 hover:bg-blue-100/80 border border-blue-200 text-[#256BF5] font-black text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all hover:scale-[1.01] active:scale-95 cursor-pointer"
                     >
                       <UploadCloud className="w-5 h-5" />
-                      <span>Upload from Gallery / Files</span>
+                      <span>{photoUrl ? 'Choose Different Image' : 'Upload from Gallery / Files'}</span>
                     </button>
-
-                  </div>
-
-                  {/* Reference Samples */}
-                  <div className="pt-2">
-                    <p className="text-[11px] text-slate-500 font-bold mb-2">Or test with reference sample scenario:</p>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {SAMPLE_PHOTOS.map((sample, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => handlePhotoSelect(sample)}
-                          className={`p-2.5 rounded-xl border text-[11px] font-black text-left transition-all ${
-                            photoUrl === sample.url
-                              ? 'bg-[#256BF5] text-white border-[#256BF5] shadow-md shadow-blue-500/20'
-                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                          }`}
-                        >
-                          {sample.label}
-                        </button>
-                      ))}
-                    </div>
                   </div>
                 </div>
 
@@ -644,12 +593,19 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
               {/* Step 1 Footer Action */}
               <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-sm flex items-center justify-between gap-4">
                 <div className="text-xs text-slate-600 font-medium">
-                  Photo loaded. Next, pinpoint where this drain is located.
+                  {photoUrl
+                    ? 'Photo loaded. Next, pinpoint where this drain is located.'
+                    : 'Please capture or upload a photo to continue.'}
                 </div>
                 <button
                   type="button"
+                  disabled={!photoUrl || isUploading}
                   onClick={() => setCurrentStep(2)}
-                  className="px-8 py-3.5 rounded-2xl bg-[#256BF5] hover:bg-blue-700 text-white font-black text-xs shadow-lg shadow-blue-500/25 flex items-center gap-2 transition-all hover:scale-[1.01] active:scale-95 cursor-pointer ml-auto"
+                  className={`px-8 py-3.5 rounded-2xl font-black text-xs flex items-center gap-2 transition-all ml-auto ${
+                    photoUrl && !isUploading
+                      ? 'bg-[#256BF5] hover:bg-blue-700 text-white shadow-lg shadow-blue-500/25 hover:scale-[1.01] active:scale-95 cursor-pointer'
+                      : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                  }`}
                 >
                   <span>Next: Confirm Location & Ward</span>
                   <ArrowRight className="w-4 h-4" />
@@ -1061,6 +1017,17 @@ export const CitizenReport: React.FC<CitizenReportProps> = ({
               Your report has been sent to the {submittedReport.ward} (Ward #{submittedReport.ward_number}) response team.
             </p>
           </div>
+
+          {/* Captured Photo Evidence Preview */}
+          {submittedReport.photo_url && (
+            <div className="w-28 h-28 mx-auto rounded-2xl overflow-hidden border-2 border-blue-200 shadow-sm">
+              <img
+                src={submittedReport.photo_url}
+                alt="Submitted Evidence"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
 
           <div className="p-6 rounded-2xl bg-[#EDF4FF] border border-blue-100 text-left space-y-3 font-mono text-xs">
             <div className="flex justify-between border-b border-blue-200 pb-2">

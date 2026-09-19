@@ -327,27 +327,45 @@ export const niraService = {
   detectDynamicHotspots,
 
   async getReports(): Promise<DrainageReport[]> {
+    let reportsList: DrainageReport[] = [];
+
     if (supabase) {
       try {
         const { data, error } = await supabase.from('drainage_reports').select('*').order('created_at', { ascending: false });
-        if (!error && data && data.length > 0) return data as DrainageReport[];
+        if (!error && data && data.length > 0) {
+          reportsList = data as DrainageReport[];
+        }
       } catch (e) {
-        console.warn('Supabase fetch failed, fallback to local mock data:', e);
+        // Fallback to local storage
       }
     }
 
-    if (typeof window !== 'undefined') {
+    if (reportsList.length === 0 && typeof window !== 'undefined') {
       try {
         const cached = localStorage.getItem('nira_local_reports');
         if (cached) {
           const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            return parsed;
+          if (Array.isArray(parsed)) {
+            // Strip out any legacy dummy mock reports
+            const realReports = parsed.filter(r =>
+              !r.id?.startsWith('nr-10') &&
+              r.reporter_name !== 'Arjun Menon' &&
+              !r.ticket_code?.includes('WYT-8821') &&
+              !r.ticket_code?.includes('KDV-4412') &&
+              !r.ticket_code?.includes('FTK-9901') &&
+              !r.ticket_code?.includes('EDP-1144') &&
+              !r.ticket_code?.includes('KLR-7733')
+            );
+            if (realReports.length !== parsed.length) {
+              localStorage.setItem('nira_local_reports', JSON.stringify(realReports));
+            }
+            reportsList = realReports;
           }
         }
       } catch {}
     }
-    return INITIAL_NIRA_REPORTS;
+
+    return reportsList;
   },
 
   async getHotspots(reports?: DrainageReport[]): Promise<HotspotCluster[]> {
@@ -359,7 +377,7 @@ export const niraService = {
         const { data, error } = await supabase.from('hotspot_clusters').select('*');
         if (!error && data && data.length > 0) return data as HotspotCluster[];
       } catch (e) {
-        console.warn('Supabase fetch failed, fallback to local hotspots:', e);
+        // Fallback to dynamic clusters
       }
     }
     return INITIAL_HOTSPOT_CLUSTERS;
@@ -367,6 +385,14 @@ export const niraService = {
 
   async getWards(): Promise<WardInfo[]> {
     return KOCHI_WARDS;
+  },
+
+  clearAllReports(): void {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('nira_local_reports');
+      window.dispatchEvent(new CustomEvent('nira_reports_updated'));
+      window.dispatchEvent(new Event('storage'));
+    }
   },
 
   async createReport(report: Partial<DrainageReport>): Promise<DrainageReport> {
@@ -386,9 +412,9 @@ export const niraService = {
     );
 
     const newReport: DrainageReport = {
-      id: `nr-${Date.now()}`,
+      id: `report-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       ticket_code: ticketCode,
-      photo_url: report.photo_url || 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?auto=format&fit=crop&w=800&q=80',
+      photo_url: report.photo_url || '',
       issue_type: report.issue_type || 'BLOCKED_STORM_DRAIN',
       severity: report.severity || 'HIGH',
       ward: wardName,
@@ -404,7 +430,7 @@ export const niraService = {
       lng: report.lng || 76.2998,
       description: report.description || 'Blocked drain reported by citizen',
       landmark: report.landmark || identified.suggestedLandmark,
-      reporter_name: report.reporter_name || 'Anonymous Citizen',
+      reporter_name: report.reporter_name || 'Citizen Reporter',
       reporter_phone: report.reporter_phone || '+91 90000 00000',
       assigned_officer: identified.officerInCharge,
       created_at: new Date().toISOString(),
@@ -415,21 +441,30 @@ export const niraService = {
       try {
         const { data, error } = await supabase.from('drainage_reports').insert([newReport]).select().single();
         if (!error && data) {
-          const inserted = data as DrainageReport;
-          INITIAL_NIRA_REPORTS.unshift(inserted);
-          return inserted;
+          newReport.id = (data as DrainageReport).id;
         }
       } catch (e) {
-        console.warn('Supabase report insert failed, fallback to local insert:', e);
+        // Fallback to local storage
       }
     }
 
-    INITIAL_NIRA_REPORTS.unshift(newReport);
-    try {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('nira_local_reports', JSON.stringify(INITIAL_NIRA_REPORTS));
+    if (typeof window !== 'undefined') {
+      try {
+        const existing = localStorage.getItem('nira_local_reports');
+        let list: DrainageReport[] = [];
+        if (existing) {
+          try { list = JSON.parse(existing); } catch {}
+        }
+        list = [newReport, ...list.filter(r => r.id !== newReport.id)];
+        localStorage.setItem('nira_local_reports', JSON.stringify(list));
+
+        // Broadcast event so any open user/admin tabs immediately refresh
+        window.dispatchEvent(new CustomEvent('nira_reports_updated', { detail: newReport }));
+        window.dispatchEvent(new Event('storage'));
+      } catch (e) {
+        console.warn('Failed saving report to localStorage:', e);
       }
-    } catch {}
+    }
 
     return newReport;
   },
@@ -478,15 +513,18 @@ export const niraService = {
       ...(newStatus === 'RESOLVED' ? { resolved_at: now } : {}),
     };
 
-    const targetIdx = INITIAL_NIRA_REPORTS.findIndex(r => r.id === id);
-    if (targetIdx !== -1) {
-      INITIAL_NIRA_REPORTS[targetIdx] = {
-        ...INITIAL_NIRA_REPORTS[targetIdx],
-        ...updatePayload,
-      };
+    if (typeof window !== 'undefined') {
       try {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('nira_local_reports', JSON.stringify(INITIAL_NIRA_REPORTS));
+        const existing = localStorage.getItem('nira_local_reports');
+        if (existing) {
+          const list: DrainageReport[] = JSON.parse(existing);
+          const idx = list.findIndex(r => r.id === id);
+          if (idx !== -1) {
+            list[idx] = { ...list[idx], ...updatePayload };
+            localStorage.setItem('nira_local_reports', JSON.stringify(list));
+            window.dispatchEvent(new CustomEvent('nira_reports_updated', { detail: list[idx] }));
+            window.dispatchEvent(new Event('storage'));
+          }
         }
       } catch {}
     }
@@ -503,6 +541,7 @@ export const niraService = {
   },
 
   async uploadDrainagePhoto(file: File): Promise<string> {
+    // 1. Try Supabase storage if available
     if (supabase) {
       try {
         const fileExt = file.name.split('.').pop() || 'jpg';
@@ -516,15 +555,53 @@ export const niraService = {
             .from('storage')
             .getPublicUrl(fileName);
           if (publicData?.publicUrl) return publicData.publicUrl;
-        } else {
-          console.warn('Supabase storage upload error:', uploadError);
         }
       } catch (err) {
-        console.warn('Storage upload failed:', err);
+        // Fallback to Base64
       }
     }
-    // Fallback: create object URL for local display
-    return URL.createObjectURL(file);
+
+    // 2. High-performance, permanent Data URL (never expires, persists across browser tabs and sessions)
+    return new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const rawResult = e.target?.result as string;
+        if (!rawResult) {
+          resolve('');
+          return;
+        }
+
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 1200;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', 0.82));
+            return;
+          }
+          resolve(rawResult);
+        };
+        img.onerror = () => resolve(rawResult);
+        img.src = rawResult;
+      };
+      reader.onerror = () => resolve('');
+      reader.readAsDataURL(file);
+    });
   }
 };
 

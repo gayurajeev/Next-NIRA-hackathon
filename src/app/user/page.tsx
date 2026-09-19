@@ -54,6 +54,22 @@ export default function CitizenDashboardPage() {
     if (user && user.role === 'CITIZEN') {
       loadReports();
     }
+
+    const handleExternalUpdate = () => {
+      loadReports();
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('nira_reports_updated', handleExternalUpdate);
+      window.addEventListener('storage', handleExternalUpdate);
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('nira_reports_updated', handleExternalUpdate);
+        window.removeEventListener('storage', handleExternalUpdate);
+      }
+    };
   }, [user]);
 
   if (isLoading) {
