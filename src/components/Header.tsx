@@ -93,61 +93,33 @@ export const Header: React.FC<HeaderProps> = ({ openIncidentsCount: propIncident
               </div>
             </Link>
 
-            {/* Desktop Role-Based Navigation — only shown when logged in */}
-            {user && (
-            <nav className="hidden md:flex items-center gap-2 bg-[#EDF4FF] p-1.5 rounded-2xl border border-blue-100">
+            {/* Desktop Role-Based Navigation — only shown for Citizen role */}
+            {user && user.role === 'CITIZEN' && (
+              <nav className="hidden md:flex items-center gap-2 bg-[#EDF4FF] p-1.5 rounded-2xl border border-blue-100">
+                <Link
+                  href="/user"
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${
+                    pathname === '/user'
+                      ? 'bg-[#256BF5] text-white shadow-md shadow-blue-500/30'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
+                  }`}
+                >
+                  <Home className="w-4 h-4" />
+                  Dashboard
+                </Link>
 
-              {/* 2. CITIZEN ROLE */}
-              {user && user.role === 'CITIZEN' && (
-                <>
-                  <Link
-                    href="/user"
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${
-                      pathname === '/user'
-                        ? 'bg-[#256BF5] text-white shadow-md shadow-blue-500/30'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
-                    }`}
-                  >
-                    <Home className="w-4 h-4" />
-                    Dashboard
-                  </Link>
-
-                  <Link
-                    href="/user/my-reports"
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${
-                      pathname === '/user/my-reports'
-                        ? 'bg-[#256BF5] text-white shadow-md shadow-blue-500/30'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
-                    }`}
-                  >
-                    <User className="w-4 h-4" />
-                    My Reports
-                  </Link>
-                </>
-              )}
-
-              {/* 3. GOVERNMENT / ADMIN ROLE */}
-              {user && user.role === 'GOVERNMENT' && (
-                <>
-                  <Link
-                    href="/admin/command-center"
-                    className={`relative flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${
-                      pathname === '/admin/command-center'
-                        ? 'bg-[#FFC800] text-slate-950 shadow-md shadow-yellow-500/30'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
-                    }`}
-                  >
-                    <LayoutDashboard className="w-4 h-4 text-slate-900" />
-                    Command Center
-                    {openCount > 0 && (
-                      <span className="ml-1 px-1.5 py-0.5 text-[10px] font-black bg-[#EF4444] text-white rounded-full">
-                        {openCount}
-                      </span>
-                    )}
-                  </Link>
-                </>
-              )}
-            </nav>
+                <Link
+                  href="/user/my-reports"
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${
+                    pathname === '/user/my-reports'
+                      ? 'bg-[#256BF5] text-white shadow-md shadow-blue-500/30'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
+                  }`}
+                >
+                  <User className="w-4 h-4" />
+                  My Reports
+                </Link>
+              </nav>
             )}
 
             {/* Right Action & User Pill */}
@@ -194,16 +166,7 @@ export const Header: React.FC<HeaderProps> = ({ openIncidentsCount: propIncident
                 </button>
               )}
 
-              {/* Primary Action Button for Government */}
-              {user?.role === 'GOVERNMENT' && (
-                <Link
-                  href="/admin/command-center"
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-[#FFC800] hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md shadow-yellow-500/20 hover:scale-105 active:scale-95 transition-all"
-                >
-                  <Building2 className="w-3.5 h-3.5" />
-                  <span>Command Center</span>
-                </Link>
-              )}
+
 
               {/* Mobile Menu Toggle Button */}
               <button
@@ -262,31 +225,13 @@ export const Header: React.FC<HeaderProps> = ({ openIncidentsCount: propIncident
               )}
 
               {user && user.role === 'GOVERNMENT' && (
-                <>
-                  <Link
-                    href="/admin/command-center"
-                    className={`flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-black ${
-                      pathname === '/admin/command-center' ? 'bg-[#FFC800] text-slate-950' : 'text-slate-700 hover:bg-slate-100'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <LayoutDashboard className="w-4 h-4" />
-                      Command Center
-                    </div>
-                    {openCount > 0 && (
-                      <span className="px-1.5 py-0.5 text-[10px] font-black bg-[#EF4444] text-white rounded-full">
-                        {openCount}
-                      </span>
-                    )}
-                  </Link>
-                  <button
-                    onClick={handleSignOut}
-                    className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-black text-red-600 hover:bg-red-50 text-left"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Sign Out ({user.name})
-                  </button>
-                </>
+                <button
+                  onClick={handleSignOut}
+                  className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-black text-red-600 hover:bg-red-50 text-left cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign Out ({user.name})
+                </button>
               )}
             </div>
           )}
